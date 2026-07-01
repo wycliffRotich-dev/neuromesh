@@ -1,0 +1,4 @@
+from app.domain.enums.job_status import JobStatus
+
+def test_job_status_completed_is_terminal():
+    assert JobStatus.COMPLETED.is_terminal() is True
