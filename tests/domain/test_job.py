@@ -1,7 +1,12 @@
 from datetime import UTC
 
+import pytest
+
 from app.domain.entities.job import Job
 from app.domain.enums.job_status import JobStatus
+from app.domain.exceptions.invalid_job_transition import (
+    InvalidJobTransition,
+)
 from app.domain.value_objects.job_id import JobId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
@@ -45,3 +50,32 @@ def test_job_has_resource_requirements() -> None:
     )
 
     assert job.resources == resources
+
+
+def test_job_can_be_queued() -> None:
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=2,
+            memory_mib=4096,
+        ),
+    )
+
+    job.queue()
+
+    assert job.status is JobStatus.QUEUED
+
+
+def test_cannot_queue_twice() -> None:
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=2,
+            memory_mib=4096,
+        ),
+    )
+
+    job.queue()
+
+    with pytest.raises(InvalidJobTransition):
+        job.queue()
