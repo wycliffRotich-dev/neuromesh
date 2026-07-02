@@ -12,6 +12,7 @@ class NodeRepository(Protocol):
 
     def list_available(self) -> list[Node]:
         """
-        Return all nodes currently available for scheduling.
+        Return all nodes currently available
+        for scheduling.
         """
         ...
