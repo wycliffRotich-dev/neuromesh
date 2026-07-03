@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.domain.entities.node import Node
 from app.domain.repositories.node_repository import NodeRepository
+from app.domain.value_objects.node_id import NodeId
 
 
 class InMemoryNodeRepository(NodeRepository):
@@ -13,7 +14,15 @@ class InMemoryNodeRepository(NodeRepository):
         self,
         nodes: list[Node] | None = None,
     ) -> None:
-        self._nodes = nodes or []
+        self._nodes: dict[str, Node] = {
+            str(node.id): node for node in (nodes or [])
+        }
 
     def list_available(self) -> list[Node]:
-        return list(self._nodes)
+        return list(self._nodes.values())
+
+    def get_by_id(
+        self,
+        node_id: NodeId,
+    ) -> Node | None:
+        return self._nodes.get(str(node_id))

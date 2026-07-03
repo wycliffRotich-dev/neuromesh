@@ -8,6 +8,7 @@ from app.domain.exceptions.invalid_job_transition import (
     InvalidJobTransition,
 )
 from app.domain.value_objects.job_id import JobId
+from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
 )
@@ -19,10 +20,15 @@ def utc_now() -> datetime:
 
 @dataclass(slots=True)
 class Job:
+    """
+    Represents a schedulable job in the system.
+    """
+
     id: JobId
     resources: ResourceRequirements
 
     status: JobStatus = JobStatus.SUBMITTED
+    assigned_node_id: NodeId | None = None
 
     submitted_at: datetime = field(default_factory=utc_now)
 
@@ -59,3 +65,11 @@ class Job:
 
     def queue(self) -> None:
         self._transition_to(JobStatus.QUEUED)
+
+    def assign_to(self, node_id: NodeId) -> None:
+        """
+        Assign this job to a compute node and transition
+        it to the SCHEDULED state.
+        """
+        self.assigned_node_id = node_id
+        self._transition_to(JobStatus.SCHEDULED)

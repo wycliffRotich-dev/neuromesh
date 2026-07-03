@@ -3,16 +3,25 @@ from __future__ import annotations
 from typing import Protocol
 
 from app.domain.entities.node import Node
+from app.domain.value_objects.node_id import NodeId
 
 
 class NodeRepository(Protocol):
     """
-    Contract for retrieving compute nodes.
+    Contract for retrieving and persisting compute nodes.
     """
 
     def list_available(self) -> list[Node]:
         """
-        Return all nodes currently available
-        for scheduling.
+        Return all nodes currently available for scheduling.
+        """
+        ...
+
+    def get_by_id(
+        self,
+        node_id: NodeId,
+    ) -> Node | None:
+        """
+        Return a node by its identifier.
         """
         ...
