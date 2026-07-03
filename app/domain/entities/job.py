@@ -33,7 +33,9 @@ class Job:
     submitted_at: datetime = field(default_factory=utc_now)
 
     _ALLOWED_TRANSITIONS = {
-        JobStatus.SUBMITTED: {JobStatus.QUEUED},
+        JobStatus.SUBMITTED: {
+            JobStatus.QUEUED,
+        },
         JobStatus.QUEUED: {
             JobStatus.SCHEDULED,
             JobStatus.CANCELLED,
@@ -51,7 +53,10 @@ class Job:
         JobStatus.CANCELLED: set(),
     }
 
-    def _transition_to(self, new_status: JobStatus) -> None:
+    def _transition_to(
+        self,
+        new_status: JobStatus,
+    ) -> None:
         allowed = self._ALLOWED_TRANSITIONS[self.status]
 
         if new_status not in allowed:
@@ -66,10 +71,24 @@ class Job:
     def queue(self) -> None:
         self._transition_to(JobStatus.QUEUED)
 
-    def assign_to(self, node_id: NodeId) -> None:
+    def assign_to(
+        self,
+        node_id: NodeId,
+    ) -> None:
         """
-        Assign this job to a compute node and transition
-        it to the SCHEDULED state.
+        Assign this job to a compute node.
         """
         self.assigned_node_id = node_id
         self._transition_to(JobStatus.SCHEDULED)
+
+    def start(self) -> None:
+        """
+        Mark the job as running.
+        """
+        self._transition_to(JobStatus.RUNNING)
+
+    def complete(self) -> None:
+        """
+        Mark the job as completed.
+        """
+        self._transition_to(JobStatus.COMPLETED)

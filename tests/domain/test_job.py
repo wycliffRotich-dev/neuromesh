@@ -21,6 +21,7 @@ def test_job_can_be_created() -> None:
     assert job.resources.cpu_cores == 4
     assert job.resources.memory_mib == 8192
     assert job.resources.vram_mib == 2048
+    assert job.status == JobStatus.SUBMITTED
 
 
 def test_jobs_with_different_ids_are_not_equal() -> None:
@@ -60,3 +61,21 @@ def test_job_can_be_assigned_to_a_node() -> None:
 
     assert job.assigned_node_id == node_id
     assert job.status == JobStatus.SCHEDULED
+
+
+def test_job_can_start_running() -> None:
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=4,
+            memory_mib=4096,
+            vram_mib=2048,
+        ),
+    )
+
+    job.queue()
+    job.assign_to(NodeId.new())
+
+    job.start()
+
+    assert job.status == JobStatus.RUNNING
