@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from app.domain.entities.job import Job
 from app.domain.entities.node import Node
 from app.domain.repositories.job_repository import JobRepository
 from app.domain.repositories.node_repository import NodeRepository
@@ -10,8 +9,8 @@ from app.domain.value_objects.job_id import JobId
 
 class ScheduleJobService:
     """
-    Application service responsible for assigning a job
-    to the most appropriate compute node.
+    Application service responsible for scheduling jobs
+    onto compute nodes.
     """
 
     def __init__(
@@ -29,7 +28,7 @@ class ScheduleJobService:
         job_id: JobId,
     ) -> Node | None:
         """
-        Attempt to schedule a job.
+        Schedule a job onto an available node.
 
         Returns:
             The selected node if scheduling succeeds,
@@ -40,9 +39,26 @@ class ScheduleJobService:
         if job is None:
             return None
 
+        # Move the job into the scheduling queue.
+        job.queue()
+
         nodes = self._node_repository.list_available()
 
-        return self._scheduler.select_node(
+        node = self._scheduler.select_node(
             job,
             nodes,
         )
+
+        if node is None:
+            return None
+
+        # Consume node resources.
+        node.allocate(job.resources)
+
+        # Record where the job has been scheduled.
+        job.assign_to(node.id)
+
+        # Persist the updated job.
+        self._job_repository.save(job)
+
+        return node
