@@ -8,10 +8,29 @@ from app.domain.value_objects.node_id import NodeId
 
 class NodeRepository(Protocol):
     """
-    Contract for retrieving and persisting compute nodes.
+    Contract for persisting and retrieving compute nodes.
     """
 
-    def list_available(self) -> list[Node]:
+    def save(
+        self,
+        node: Node,
+    ) -> None:
+        """
+        Persist a compute node.
+        """
+        ...
+
+    def list(
+        self,
+    ) -> list[Node]:
+        """
+        Return all registered compute nodes.
+        """
+        ...
+
+    def list_available(
+        self,
+    ) -> list[Node]:
         """
         Return all nodes currently available for scheduling.
         """
