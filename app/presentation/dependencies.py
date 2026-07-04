@@ -1,6 +1,9 @@
 from app.application.services.create_job_service import (
     CreateJobService,
 )
+from app.application.services.get_job_service import (
+    GetJobService,
+)
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
 )
@@ -14,5 +17,15 @@ def get_create_job_service() -> CreateJobService:
     for creating jobs.
     """
     return CreateJobService(
+        job_repository=_job_repository,
+    )
+
+
+def get_get_job_service() -> GetJobService:
+    """
+    Return the application service responsible
+    for retrieving jobs.
+    """
+    return GetJobService(
         job_repository=_job_repository,
     )

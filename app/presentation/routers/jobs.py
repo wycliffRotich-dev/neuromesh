@@ -1,19 +1,32 @@
-from fastapi import APIRouter, Depends, status
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.application.services.create_job_service import (
     CreateJobService,
 )
+from app.application.services.get_job_service import (
+    GetJobService,
+)
+from app.domain.exceptions.job_not_found_error import (
+    JobNotFoundError,
+)
+from app.domain.value_objects.job_id import JobId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
 )
 from app.presentation.dependencies import (
     get_create_job_service,
+    get_get_job_service,
 )
 from app.presentation.schemas.create_job_request import (
     CreateJobRequest,
 )
 from app.presentation.schemas.create_job_response import (
     CreateJobResponse,
+)
+from app.presentation.schemas.get_job_response import (
+    GetJobResponse,
 )
 
 router = APIRouter(
@@ -47,4 +60,39 @@ def create_job(
     return CreateJobResponse(
         id=str(job.id),
         status=job.status.name,
+    )
+
+
+@router.get(
+    "/{job_id}",
+    response_model=GetJobResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_job(
+    job_id: str,
+    service: GetJobService = Depends(
+        get_get_job_service,
+    ),
+) -> GetJobResponse:
+    """
+    Retrieve an existing job.
+    """
+    try:
+        job = service.execute(
+            JobId(
+                value=UUID(job_id),
+            ),
+        )
+    except JobNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return GetJobResponse(
+        id=str(job.id),
+        status=job.status.name,
+        cpu_cores=job.resources.cpu_cores,
+        memory_mib=job.resources.memory_mib,
+        vram_mib=job.resources.vram_mib,
     )
