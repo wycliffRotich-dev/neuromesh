@@ -15,3 +15,4 @@ htmlcov/
 # IDE
 .vscode/
 .idea/
+neuromesh.egg-info/
