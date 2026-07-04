@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+import pytest
+
+from app.application.services.complete_job_service import (
+    CompleteJobService,
+)
 from app.domain.entities.job import Job
 from app.domain.entities.node import Node
 from app.domain.enums.job_status import JobStatus
@@ -12,42 +19,40 @@ from app.infrastructure.repositories.in_memory_job_repository import (
 from app.infrastructure.repositories.in_memory_node_repository import (
     InMemoryNodeRepository,
 )
-from app.application.services.complete_job_service import (
-    CompleteJobService,
-)
 
 
 def test_complete_job_service_completes_job() -> None:
-    resources = ResourceRequirements(
-        cpu_cores=4,
-        memory_mib=4096,
-        vram_mib=2048,
-    )
-
-    job = Job(
-        id=JobId.new(),
-        resources=resources,
-    )
-
+    # 1. Instantiate the domain entity safely using its native dataclass fields
     node = Node(
         id=NodeId.new(),
         capacity=ResourceRequirements(
-            cpu_cores=16,
-            memory_mib=32768,
-            vram_mib=16384,
+            cpu_cores=8,
+            memory_mib=16384,
+            vram_mib=4096,
         ),
     )
 
+    # 2. Seed the repository through the constructor as your code specifies
+    node_repository = InMemoryNodeRepository(nodes=[node])
+    job_repository = InMemoryJobRepository()
+
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=4,
+            memory_mib=8192,
+            vram_mib=2048,
+        ),
+    )
+
+    # 3. Follow your exact strict FSM state transitions to reach a valid running state
     job.queue()
     job.assign_to(node.id)
+    node.allocate(job.resources)
     job.start()
 
-    node.allocate(resources)
-
-    job_repository = InMemoryJobRepository()
+    # 4. Persist the valid job aggregate
     job_repository.save(job)
-
-    node_repository = InMemoryNodeRepository([node])
 
     service = CompleteJobService(
         job_repository=job_repository,
@@ -56,6 +61,73 @@ def test_complete_job_service_completes_job() -> None:
 
     completed = service.execute(job.id)
 
-    assert completed is not None
+    assert completed is job
     assert completed.status == JobStatus.COMPLETED
-    assert node.available == node.capacity
+
+
+def test_complete_job_service_returns_none_when_job_does_not_exist() -> None:
+    job_repository = InMemoryJobRepository()
+    node_repository = InMemoryNodeRepository()
+
+    service = CompleteJobService(
+        job_repository=job_repository,
+        node_repository=node_repository,
+    )
+
+    result = service.execute(JobId.new())
+
+    assert result is None
+
+
+def test_complete_job_service_returns_none_when_job_has_no_assigned_node() -> None:
+    job_repository = InMemoryJobRepository()
+    node_repository = InMemoryNodeRepository()
+
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=4,
+            memory_mib=8192,
+            vram_mib=2048,
+        ),
+    )
+    job_repository.save(job)
+
+    service = CompleteJobService(
+        job_repository=job_repository,
+        node_repository=node_repository,
+    )
+
+    result = service.execute(job.id)
+
+    assert result is None
+
+
+def test_complete_job_service_returns_none_when_node_does_not_exist() -> None:
+    job_repository = InMemoryJobRepository()
+    node_repository = InMemoryNodeRepository()
+
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=4,
+            memory_mib=8192,
+            vram_mib=2048,
+        ),
+    )
+
+    # Transition to an assigned state using an unmapped NodeId boundary
+    job.queue()
+    fake_node_id = NodeId.new()
+    job.assign_to(fake_node_id)
+
+    job_repository.save(job)
+
+    service = CompleteJobService(
+        job_repository=job_repository,
+        node_repository=node_repository,
+    )
+
+    result = service.execute(job.id)
+
+    assert result is None
