@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.application.exceptions.node_not_found_error import (
+from app.domain.exceptions.node_not_found_error import (
     NodeNotFoundError,
 )
 from app.domain.entities.node import Node

@@ -7,6 +7,9 @@ from app.application.services.create_node_service import (
 from app.application.services.get_job_service import (
     GetJobService,
 )
+from app.application.services.get_node_service import (
+    GetNodeService,
+)
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
 )
@@ -44,5 +47,15 @@ def get_create_node_service() -> CreateNodeService:
     for creating compute nodes.
     """
     return CreateNodeService(
+        node_repository=_node_repository,
+    )
+
+
+def get_get_node_service() -> GetNodeService:
+    """
+    Return the application service responsible
+    for retrieving compute nodes.
+    """
+    return GetNodeService(
         node_repository=_node_repository,
     )
