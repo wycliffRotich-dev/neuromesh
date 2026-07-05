@@ -26,26 +26,16 @@ class InMemoryNodeRepository(NodeRepository):
         self,
         node: Node,
     ) -> None:
-        """
-        Persist a compute node.
-        """
         self._nodes[node.id] = node
 
     def list(
         self,
     ) -> list[Node]:
-        """
-        Return all registered compute nodes.
-        """
         return list(self._nodes.values())
 
     def list_available(
         self,
     ) -> list[Node]:
-        """
-        Return all nodes currently available for scheduling.
-        """
-
         return [
             node
             for node in self._nodes.values()
@@ -61,7 +51,10 @@ class InMemoryNodeRepository(NodeRepository):
         self,
         node_id: NodeId,
     ) -> Node | None:
-        """
-        Return a node by its identifier.
-        """
         return self._nodes.get(node_id)
+
+    def delete(
+        self,
+        node_id: NodeId,
+    ) -> None:
+        self._nodes.pop(node_id, None)

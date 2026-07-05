@@ -1,39 +1,48 @@
 from __future__ import annotations
 
-from typing import Protocol
+from abc import ABC, abstractmethod
 
 from app.domain.entities.node import Node
 from app.domain.value_objects.node_id import NodeId
 
 
-class NodeRepository(Protocol):
+class NodeRepository(ABC):
     """
-    Contract for persisting and retrieving
-    compute nodes.
+    Repository abstraction for compute nodes.
     """
 
+    @abstractmethod
     def save(
         self,
         node: Node,
     ) -> None:
-        """
-        Persist a compute node.
-        """
         ...
 
+    @abstractmethod
     def list(
         self,
     ) -> list[Node]:
-        """
-        Return all registered compute nodes.
-        """
         ...
 
+    @abstractmethod
+    def list_available(
+        self,
+    ) -> list[Node]:
+        ...
+
+    @abstractmethod
     def get_by_id(
         self,
         node_id: NodeId,
     ) -> Node | None:
+        ...
+
+    @abstractmethod
+    def delete(
+        self,
+        node_id: NodeId,
+    ) -> None:
         """
-        Return a node by its identifier.
+        Remove a node from the repository.
         """
         ...
