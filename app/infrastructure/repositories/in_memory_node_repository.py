@@ -39,20 +39,6 @@ class InMemoryNodeRepository(NodeRepository):
         """
         return list(self._nodes.values())
 
-    def list_available(
-        self,
-    ) -> list[Node]:
-        """
-        Return all nodes currently available for scheduling.
-        """
-        return [
-            node
-            for node in self._nodes.values()
-            if node.available.cpu_cores > 0
-            and node.available.memory_mib > 0
-            and node.available.vram_mib > 0
-        ]
-
     def get_by_id(
         self,
         node_id: NodeId,

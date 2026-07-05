@@ -28,7 +28,7 @@ class ScheduleJobService:
         job_id: JobId,
     ) -> Node | None:
         """
-        Schedule a job onto an available node.
+        Schedule a job onto a compute node.
 
         Returns:
             The selected node if scheduling succeeds,
@@ -42,8 +42,10 @@ class ScheduleJobService:
         # Move the job into the scheduling queue.
         job.queue()
 
-        nodes = self._node_repository.list_available()
+        # Retrieve all registered nodes.
+        nodes = self._node_repository.list()
 
+        # Let the Domain decide which node is suitable.
         node = self._scheduler.select_node(
             job,
             nodes,
@@ -58,7 +60,8 @@ class ScheduleJobService:
         # Record where the job has been scheduled.
         job.assign_to(node.id)
 
-        # Persist the updated job.
+        # Persist both updated aggregates.
+        self._node_repository.save(node)
         self._job_repository.save(job)
 
         return node
