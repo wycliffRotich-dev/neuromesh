@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
 )
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 @dataclass(slots=True)
@@ -18,9 +23,18 @@ class Node:
     capacity: ResourceRequirements
 
     available: ResourceRequirements = field(init=False)
+    last_seen_at: datetime = field(
+        default_factory=utc_now,
+    )
 
     def __post_init__(self) -> None:
         self.available = self.capacity
+
+    def heartbeat(self) -> None:
+        """
+        Record that this node is alive.
+        """
+        self.last_seen_at = utc_now()
 
     def can_host(
         self,
