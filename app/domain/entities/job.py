@@ -96,5 +96,12 @@ class Job:
     def fail(self) -> None:
         """
         Mark the job as failed.
-    """
+        """
         self._transition_to(JobStatus.FAILED)
+
+    def cancel(self) -> None:
+        """
+        Mark the job as cancelled.
+        """
+        self._transition_to(JobStatus.CANCELLED) 
+        
