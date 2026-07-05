@@ -9,7 +9,7 @@ from app.domain.repositories.node_repository import (
 class ListNodesService:
     """
     Application service responsible for listing
-    registered compute nodes.
+    available compute nodes.
     """
 
     def __init__(
@@ -22,6 +22,7 @@ class ListNodesService:
         self,
     ) -> list[Node]:
         """
-        Retrieve all registered compute nodes.
+        Retrieve all compute nodes that are
+        currently available for scheduling.
         """
-        return self._node_repository.list()
+        return self._node_repository.list_available()
