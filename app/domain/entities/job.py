@@ -92,3 +92,9 @@ class Job:
         Mark the job as completed.
         """
         self._transition_to(JobStatus.COMPLETED)
+
+    def fail(self) -> None:
+        """
+        Mark the job as failed.
+    """
+        self._transition_to(JobStatus.FAILED)
