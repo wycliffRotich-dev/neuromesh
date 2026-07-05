@@ -27,10 +27,14 @@ class Job:
     id: JobId
     resources: ResourceRequirements
 
+    priority: int = 0
+
     status: JobStatus = JobStatus.SUBMITTED
     assigned_node_id: NodeId | None = None
 
-    submitted_at: datetime = field(default_factory=utc_now)
+    submitted_at: datetime = field(
+        default_factory=utc_now,
+    )
 
     _ALLOWED_TRANSITIONS = {
         JobStatus.SUBMITTED: {
@@ -57,7 +61,9 @@ class Job:
         self,
         new_status: JobStatus,
     ) -> None:
-        allowed = self._ALLOWED_TRANSITIONS[self.status]
+        allowed = self._ALLOWED_TRANSITIONS[
+            self.status
+        ]
 
         if new_status not in allowed:
             raise InvalidJobTransition(
@@ -68,8 +74,12 @@ class Job:
 
         self.status = new_status
 
-    def queue(self) -> None:
-        self._transition_to(JobStatus.QUEUED)
+    def queue(
+        self,
+    ) -> None:
+        self._transition_to(
+            JobStatus.QUEUED,
+        )
 
     def assign_to(
         self,
@@ -79,29 +89,46 @@ class Job:
         Assign this job to a compute node.
         """
         self.assigned_node_id = node_id
-        self._transition_to(JobStatus.SCHEDULED)
+        self._transition_to(
+            JobStatus.SCHEDULED,
+        )
 
-    def start(self) -> None:
+    def start(
+        self,
+    ) -> None:
         """
         Mark the job as running.
         """
-        self._transition_to(JobStatus.RUNNING)
+        self._transition_to(
+            JobStatus.RUNNING,
+        )
 
-    def complete(self) -> None:
+    def complete(
+        self,
+    ) -> None:
         """
         Mark the job as completed.
         """
-        self._transition_to(JobStatus.COMPLETED)
+        self._transition_to(
+            JobStatus.COMPLETED,
+        )
 
-    def fail(self) -> None:
+    def fail(
+        self,
+    ) -> None:
         """
         Mark the job as failed.
         """
-        self._transition_to(JobStatus.FAILED)
+        self._transition_to(
+            JobStatus.FAILED,
+        )
 
-    def cancel(self) -> None:
+    def cancel(
+        self,
+    ) -> None:
         """
         Mark the job as cancelled.
         """
-        self._transition_to(JobStatus.CANCELLED) 
-        
+        self._transition_to(
+            JobStatus.CANCELLED,
+        )
