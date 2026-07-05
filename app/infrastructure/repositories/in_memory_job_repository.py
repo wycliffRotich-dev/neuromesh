@@ -44,3 +44,11 @@ class InMemoryJobRepository(JobRepository):
             The matching Job if found, otherwise None.
         """
         return self._jobs.get(str(job_id))
+
+    def list(
+        self,
+    ) -> list[Job]:
+        """
+        Return all jobs.
+        """
+        return list(self._jobs.values())

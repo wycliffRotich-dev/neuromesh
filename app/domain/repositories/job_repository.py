@@ -1,30 +1,32 @@
 from __future__ import annotations
 
-from typing import Protocol
+from abc import ABC, abstractmethod
 
 from app.domain.entities.job import Job
 from app.domain.value_objects.job_id import JobId
 
 
-class JobRepository(Protocol):
+class JobRepository(ABC):
     """
-    Contract for persisting and retrieving jobs.
-
-    Infrastructure implementations are responsible for
-    storing jobs in databases or other persistence layers.
+    Repository abstraction for jobs.
     """
 
-    def save(self, job: Job) -> None:
-        """
-        Persist a job.
-        """
+    @abstractmethod
+    def save(
+        self,
+        job: Job,
+    ) -> None:
         ...
 
-    def get_by_id(self, job_id: JobId) -> Job | None:
-        """
-        Retrieve a job by its identifier.
+    @abstractmethod
+    def get_by_id(
+        self,
+        job_id: JobId,
+    ) -> Job | None:
+        ...
 
-        Returns:
-            The matching Job if found, otherwise None.
-        """
+    @abstractmethod
+    def list(
+        self,
+    ) -> list[Job]:
         ...
