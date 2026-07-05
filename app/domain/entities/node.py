@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
@@ -11,6 +11,9 @@ from app.domain.value_objects.resource_requirements import (
 
 def utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+HEARTBEAT_TIMEOUT = timedelta(minutes=1)
 
 
 @dataclass(slots=True)
@@ -36,17 +39,30 @@ class Node:
         """
         self.last_seen_at = utc_now()
 
+    def is_alive(self) -> bool:
+        """
+        Return True if the node has sent a heartbeat
+        within the configured timeout.
+        """
+        return (
+            utc_now() - self.last_seen_at
+        ) <= HEARTBEAT_TIMEOUT
+
     def can_host(
         self,
         requirements: ResourceRequirements,
     ) -> bool:
         """
-        Return True if this node has sufficient available resources.
+        Return True if this node has sufficient
+        available resources.
         """
         return (
-            self.available.cpu_cores >= requirements.cpu_cores
-            and self.available.memory_mib >= requirements.memory_mib
-            and self.available.vram_mib >= requirements.vram_mib
+            self.available.cpu_cores
+            >= requirements.cpu_cores
+            and self.available.memory_mib
+            >= requirements.memory_mib
+            and self.available.vram_mib
+            >= requirements.vram_mib
         )
 
     def allocate(
@@ -56,9 +72,12 @@ class Node:
         """
         Allocate resources for a scheduled job.
         """
-        if not self.can_host(requirements):
+        if not self.can_host(
+            requirements,
+        ):
             raise ValueError(
-                "Node does not have enough available resources."
+                "Node does not have enough "
+                "available resources."
             )
 
         self.available = ResourceRequirements(
@@ -81,7 +100,8 @@ class Node:
         requirements: ResourceRequirements,
     ) -> None:
         """
-        Release previously allocated resources back to the node.
+        Release previously allocated resources
+        back to the node.
         """
         self.available = ResourceRequirements(
             cpu_cores=min(
