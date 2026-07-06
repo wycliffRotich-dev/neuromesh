@@ -26,6 +26,11 @@ class Node:
     capacity: ResourceRequirements
 
     available: ResourceRequirements = field(init=False)
+
+    labels: dict[str, str] = field(
+        default_factory=dict,
+    )
+
     last_seen_at: datetime = field(
         default_factory=utc_now,
     )
