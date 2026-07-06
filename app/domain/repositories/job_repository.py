@@ -30,3 +30,12 @@ class JobRepository(ABC):
         self,
     ) -> list[Job]:
         ...
+
+    @abstractmethod
+    def list_queued(
+        self,
+    ) -> list[Job]:
+        """
+        Return all queued jobs.
+        """
+        ...
