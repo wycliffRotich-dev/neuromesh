@@ -60,7 +60,9 @@ class Job:
             JobStatus.FAILED,
         },
         JobStatus.COMPLETED: set(),
-        JobStatus.FAILED: set(),
+        JobStatus.FAILED: {
+            JobStatus.QUEUED,
+        },
         JobStatus.CANCELLED: set(),
     }
 
@@ -82,26 +84,39 @@ class Job:
         self.status = new_status
 
     def queue(self) -> None:
-        self._transition_to(JobStatus.QUEUED)
+        self._transition_to(
+            JobStatus.QUEUED,
+        )
 
     def assign_to(
         self,
         node_id: NodeId,
     ) -> None:
         self.assigned_node_id = node_id
-        self._transition_to(JobStatus.SCHEDULED)
+
+        self._transition_to(
+            JobStatus.SCHEDULED,
+        )
 
     def start(self) -> None:
-        self._transition_to(JobStatus.RUNNING)
+        self._transition_to(
+            JobStatus.RUNNING,
+        )
 
     def complete(self) -> None:
-        self._transition_to(JobStatus.COMPLETED)
+        self._transition_to(
+            JobStatus.COMPLETED,
+        )
 
     def fail(self) -> None:
-        self._transition_to(JobStatus.FAILED)
+        self._transition_to(
+            JobStatus.FAILED,
+        )
 
     def cancel(self) -> None:
-        self._transition_to(JobStatus.CANCELLED)
+        self._transition_to(
+            JobStatus.CANCELLED,
+        )
 
     def can_retry(self) -> bool:
         """
@@ -119,3 +134,20 @@ class Job:
             )
 
         self.retry_count += 1
+
+    def retry(self) -> None:
+        """
+        Retry a failed job by consuming one retry
+        attempt and placing it back into the queue.
+        """
+        if self.status != JobStatus.FAILED:
+            raise InvalidJobTransition(
+                "Only failed jobs may be retried."
+            )
+
+        self.record_retry()
+        self.assigned_node_id = None
+
+        self._transition_to(
+            JobStatus.QUEUED,
+        )
