@@ -29,6 +29,10 @@ class Job:
 
     priority: int = 0
 
+    constraints: dict[str, str] = field(
+        default_factory=dict,
+    )
+
     status: JobStatus = JobStatus.SUBMITTED
     assigned_node_id: NodeId | None = None
 
