@@ -33,6 +33,9 @@ class Job:
         default_factory=dict,
     )
 
+    max_retries: int = 0
+    retry_count: int = 0
+
     status: JobStatus = JobStatus.SUBMITTED
     assigned_node_id: NodeId | None = None
 
@@ -78,61 +81,41 @@ class Job:
 
         self.status = new_status
 
-    def queue(
-        self,
-    ) -> None:
-        self._transition_to(
-            JobStatus.QUEUED,
-        )
+    def queue(self) -> None:
+        self._transition_to(JobStatus.QUEUED)
 
     def assign_to(
         self,
         node_id: NodeId,
     ) -> None:
-        """
-        Assign this job to a compute node.
-        """
         self.assigned_node_id = node_id
-        self._transition_to(
-            JobStatus.SCHEDULED,
-        )
+        self._transition_to(JobStatus.SCHEDULED)
 
-    def start(
-        self,
-    ) -> None:
-        """
-        Mark the job as running.
-        """
-        self._transition_to(
-            JobStatus.RUNNING,
-        )
+    def start(self) -> None:
+        self._transition_to(JobStatus.RUNNING)
 
-    def complete(
-        self,
-    ) -> None:
-        """
-        Mark the job as completed.
-        """
-        self._transition_to(
-            JobStatus.COMPLETED,
-        )
+    def complete(self) -> None:
+        self._transition_to(JobStatus.COMPLETED)
 
-    def fail(
-        self,
-    ) -> None:
-        """
-        Mark the job as failed.
-        """
-        self._transition_to(
-            JobStatus.FAILED,
-        )
+    def fail(self) -> None:
+        self._transition_to(JobStatus.FAILED)
 
-    def cancel(
-        self,
-    ) -> None:
+    def cancel(self) -> None:
+        self._transition_to(JobStatus.CANCELLED)
+
+    def can_retry(self) -> bool:
         """
-        Mark the job as cancelled.
+        Return True if the job has retries remaining.
         """
-        self._transition_to(
-            JobStatus.CANCELLED,
-        )
+        return self.retry_count < self.max_retries
+
+    def record_retry(self) -> None:
+        """
+        Consume one retry attempt.
+        """
+        if not self.can_retry():
+            raise ValueError(
+                "Job has exhausted all retries."
+            )
+
+        self.retry_count += 1
