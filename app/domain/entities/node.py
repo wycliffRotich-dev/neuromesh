@@ -35,6 +35,8 @@ class Node:
         default_factory=utc_now,
     )
 
+    draining: bool = False
+
     def __post_init__(self) -> None:
         self.available = self.capacity
 
@@ -52,6 +54,23 @@ class Node:
         return (
             utc_now() - self.last_seen_at
         ) <= HEARTBEAT_TIMEOUT
+
+    def drain(self) -> None:
+        """
+        Mark this node as draining.
+
+        Draining nodes continue running existing
+        workloads but must not receive newly
+        scheduled jobs.
+        """
+        self.draining = True
+
+    def is_draining(self) -> bool:
+        """
+        Return True if the node is currently
+        draining.
+        """
+        return self.draining
 
     def can_host(
         self,

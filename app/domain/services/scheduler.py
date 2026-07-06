@@ -10,21 +10,63 @@ class Scheduler:
     appropriate node for a job.
     """
 
+    def _matches_constraints(
+        self,
+        job: Job,
+        node: Node,
+    ) -> bool:
+        """
+        Return True if the node satisfies all job
+        scheduling constraints.
+
+        Jobs without a constraints attribute are
+        considered compatible with every node.
+        """
+        constraints = getattr(
+            job,
+            "constraints",
+            {},
+        )
+
+        for key, value in constraints.items():
+            if node.labels.get(key) != value:
+                return False
+
+        return True
+
     def select_node(
         self,
         job: Job,
         nodes: list[Node],
     ) -> Node | None:
         """
-        Select the best-fit node capable of hosting the job.
+        Select the best-fit node capable of hosting
+        the given job.
 
-        The best-fit node is the one that leaves the least
-        remaining CPU capacity after allocation.
+        A node must:
+        - be alive
+        - not be draining
+        - satisfy all job constraints
+        - have sufficient available resources
+
+        Among all valid candidates, choose the node
+        that leaves the least remaining CPU capacity
+        after allocation.
         """
         candidates = [
             node
             for node in nodes
-            if node.can_host(job.resources)
+            if (
+                node.is_alive()
+                and not node.is_draining()
+                and self._matches_constraints(
+                    job,
+                    node,
+                )
+                and node.can_host(
+                    job.resources,
+                )
+            )
         ]
 
         if not candidates:
