@@ -15,19 +15,19 @@ def test_valid_resource_requirements() -> None:
     assert requirements.vram_mib == 24576
 
 
-def test_cpu_must_be_positive() -> None:
+def test_cpu_cannot_be_negative() -> None:
     with pytest.raises(ValueError):
         ResourceRequirements(
-            cpu_cores=0,
+            cpu_cores=-1,
             memory_mib=1024,
         )
 
 
-def test_memory_must_be_positive() -> None:
+def test_memory_cannot_be_negative() -> None:
     with pytest.raises(ValueError):
         ResourceRequirements(
             cpu_cores=1,
-            memory_mib=0,
+            memory_mib=-1,
         )
 
 

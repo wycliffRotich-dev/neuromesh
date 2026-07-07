@@ -17,7 +17,10 @@ class NodeId:
         return cls(uuid4())
 
     @classmethod
-    def from_string(cls, value: str) -> "NodeId":
+    def from_string(
+        cls,
+        value: str,
+    ) -> "NodeId":
         return cls(UUID(value))
 
     def __str__(self) -> str:

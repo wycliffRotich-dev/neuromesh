@@ -26,19 +26,14 @@ class Job:
 
     id: JobId
     resources: ResourceRequirements
-
     priority: int = 0
-
     constraints: dict[str, str] = field(
         default_factory=dict,
     )
-
     max_retries: int = 0
     retry_count: int = 0
-
     status: JobStatus = JobStatus.SUBMITTED
     assigned_node_id: NodeId | None = None
-
     submitted_at: datetime = field(
         default_factory=utc_now,
     )
@@ -65,6 +60,31 @@ class Job:
         },
         JobStatus.CANCELLED: set(),
     }
+
+    def __post_init__(self) -> None:
+        """
+        Validate that this job requests a meaningful
+        amount of work.
+
+        A job requesting zero CPU or zero memory cannot
+        actually be scheduled or executed, so this is
+        rejected here at job-creation time rather than
+        inside ResourceRequirements itself -- that value
+        object also represents remaining node capacity,
+        where zero is a valid state (a fully-allocated
+        node). VRAM is exempt since CPU-only jobs are
+        legitimate.
+        """
+        if self.resources.cpu_cores <= 0:
+            raise ValueError(
+                "Job must request at least one CPU core."
+            )
+
+        if self.resources.memory_mib <= 0:
+            raise ValueError(
+                "Job must request a positive amount "
+                "of memory."
+            )
 
     def _transition_to(
         self,
@@ -93,7 +113,6 @@ class Job:
         node_id: NodeId,
     ) -> None:
         self.assigned_node_id = node_id
-
         self._transition_to(
             JobStatus.SCHEDULED,
         )
@@ -147,7 +166,6 @@ class Job:
 
         self.record_retry()
         self.assigned_node_id = None
-
         self._transition_to(
             JobStatus.QUEUED,
         )

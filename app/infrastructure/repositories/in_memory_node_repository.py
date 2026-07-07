@@ -20,7 +20,9 @@ class InMemoryNodeRepository(NodeRepository):
 
         if nodes is not None:
             for node in nodes:
-                self.save(node)
+                self.save(
+                    node,
+                )
 
     def save(
         self,
@@ -31,30 +33,40 @@ class InMemoryNodeRepository(NodeRepository):
     def list(
         self,
     ) -> list[Node]:
-        return list(self._nodes.values())
+        return list(
+            self._nodes.values(),
+        )
 
     def list_available(
         self,
     ) -> list[Node]:
+        """
+        Return all healthy nodes.
+
+        Resource suitability is determined by the
+        Scheduler through Node.can_host(), so this
+        repository only filters unhealthy nodes.
+        """
         return [
             node
             for node in self._nodes.values()
-            if (
-                node.is_alive()
-                and node.available.cpu_cores > 0
-                and node.available.memory_mib > 0
-                and node.available.vram_mib > 0
-            )
+            if node.is_alive()
+            and not node.is_draining()
         ]
 
     def get_by_id(
         self,
         node_id: NodeId,
     ) -> Node | None:
-        return self._nodes.get(node_id)
+        return self._nodes.get(
+            node_id,
+        )
 
     def delete(
         self,
         node_id: NodeId,
     ) -> None:
-        self._nodes.pop(node_id, None)
+        self._nodes.pop(
+            node_id,
+            None,
+        )
