@@ -24,9 +24,7 @@ class NodeRepositoryContract:
 
     @pytest.fixture
     def repository(self):
-        raise NotImplementedError(
-            "Subclasses must provide a `repository` fixture."
-        )
+        raise NotImplementedError("Subclasses must provide a `repository` fixture.")
 
     def _make_node(self, **overrides) -> Node:
         defaults = dict(

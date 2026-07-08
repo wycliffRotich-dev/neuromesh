@@ -13,7 +13,7 @@ class JobId:
     value: UUID
 
     @classmethod
-    def new(cls) -> "JobId":
+    def new(cls) -> JobId:
         """
         Create a new unique Job identifier.
         """

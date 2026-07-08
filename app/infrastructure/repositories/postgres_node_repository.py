@@ -84,9 +84,7 @@ class PostgresNodeRepository(NodeRepository):
         """
         with self._pool.connection() as conn:
             conn.row_factory = dict_row
-            rows = conn.execute(
-                "SELECT * FROM nodes WHERE draining = false"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM nodes WHERE draining = false").fetchall()
         return [self._to_entity(row) for row in rows]
 
     def get_by_id(self, node_id: NodeId) -> Node | None:

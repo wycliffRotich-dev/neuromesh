@@ -28,10 +28,7 @@ def test_remove_offline_node_service_removes_offline_node() -> None:
         ),
     )
 
-    node.last_seen_at = (
-        datetime.now(UTC)
-        - timedelta(minutes=2)
-    )
+    node.last_seen_at = datetime.now(UTC) - timedelta(minutes=2)
 
     repository = InMemoryNodeRepository(
         [
@@ -47,6 +44,9 @@ def test_remove_offline_node_service_removes_offline_node() -> None:
         node.id,
     )
 
-    assert repository.get_by_id(
-        node.id,
-    ) is None
+    assert (
+        repository.get_by_id(
+            node.id,
+        )
+        is None
+    )

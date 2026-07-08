@@ -44,8 +44,4 @@ class InMemoryJobRepository(JobRepository):
         """
         Return all queued jobs.
         """
-        return [
-            job
-            for job in self._jobs.values()
-            if job.status == JobStatus.QUEUED
-        ]
+        return [job for job in self._jobs.values() if job.status == JobStatus.QUEUED]

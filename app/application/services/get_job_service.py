@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ...domain.exceptions.job_not_found_error import JobNotFoundError
 from ...domain.entities.job import Job
+from ...domain.exceptions.job_not_found_error import JobNotFoundError
 from ...domain.repositories.job_repository import JobRepository
 from ...domain.value_objects.job_id import JobId
 

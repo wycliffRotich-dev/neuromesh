@@ -15,27 +15,23 @@ class NodeRepository(ABC):
     def save(
         self,
         node: Node,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
     def list(
         self,
-    ) -> list[Node]:
-        ...
+    ) -> list[Node]: ...
 
     @abstractmethod
     def list_available(
         self,
-    ) -> list[Node]:
-        ...
+    ) -> list[Node]: ...
 
     @abstractmethod
     def get_by_id(
         self,
         node_id: NodeId,
-    ) -> Node | None:
-        ...
+    ) -> Node | None: ...
 
     @abstractmethod
     def delete(

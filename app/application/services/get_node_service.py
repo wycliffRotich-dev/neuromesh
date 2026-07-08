@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from app.domain.entities.node import Node
 from app.domain.exceptions.node_not_found_error import (
     NodeNotFoundError,
 )
-from app.domain.entities.node import Node
 from app.domain.repositories.node_repository import (
     NodeRepository,
 )

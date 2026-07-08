@@ -39,11 +39,7 @@ class ClusterHealthService:
         nodes = self._node_repository.list()
 
         total_nodes = len(nodes)
-        alive_nodes = sum(
-            1
-            for node in nodes
-            if node.is_alive()
-        )
+        alive_nodes = sum(1 for node in nodes if node.is_alive())
         offline_nodes = total_nodes - alive_nodes
 
         return ClusterHealth(

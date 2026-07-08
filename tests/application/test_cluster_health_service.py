@@ -35,10 +35,8 @@ def test_cluster_health_reports_alive_and_offline_nodes() -> None:
         ),
     )
 
-    node2.last_seen_at = (
-        node2.last_seen_at.replace(
-            year=node2.last_seen_at.year - 1,
-        )
+    node2.last_seen_at = node2.last_seen_at.replace(
+        year=node2.last_seen_at.year - 1,
     )
 
     repository = InMemoryNodeRepository(

@@ -39,9 +39,6 @@ def test_node_is_not_alive_when_heartbeat_is_stale() -> None:
         ),
     )
 
-    node.last_seen_at = (
-        datetime.now(UTC)
-        - timedelta(minutes=2)
-    )
+    node.last_seen_at = datetime.now(UTC) - timedelta(minutes=2)
 
     assert not node.is_alive()

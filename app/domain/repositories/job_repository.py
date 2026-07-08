@@ -15,21 +15,18 @@ class JobRepository(ABC):
     def save(
         self,
         job: Job,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
     def get_by_id(
         self,
         job_id: JobId,
-    ) -> Job | None:
-        ...
+    ) -> Job | None: ...
 
     @abstractmethod
     def list(
         self,
-    ) -> list[Job]:
-        ...
+    ) -> list[Job]: ...
 
     @abstractmethod
     def list_queued(

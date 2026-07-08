@@ -56,9 +56,7 @@ class Node:
         Return True if the node has sent a heartbeat
         within the configured timeout.
         """
-        return (
-            utc_now() - self.last_seen_at
-        ) <= HEARTBEAT_TIMEOUT
+        return (utc_now() - self.last_seen_at) <= HEARTBEAT_TIMEOUT
 
     def drain(self) -> None:
         """
@@ -85,12 +83,9 @@ class Node:
         available resources.
         """
         return (
-            self.available.cpu_cores
-            >= requirements.cpu_cores
-            and self.available.memory_mib
-            >= requirements.memory_mib
-            and self.available.vram_mib
-            >= requirements.vram_mib
+            self.available.cpu_cores >= requirements.cpu_cores
+            and self.available.memory_mib >= requirements.memory_mib
+            and self.available.vram_mib >= requirements.vram_mib
         )
 
     def allocate(
@@ -103,23 +98,11 @@ class Node:
         if not self.can_host(
             requirements,
         ):
-            raise ValueError(
-                "Node does not have enough "
-                "available resources."
-            )
+            raise ValueError("Node does not have enough available resources.")
         self.available = ResourceRequirements(
-            cpu_cores=(
-                self.available.cpu_cores
-                - requirements.cpu_cores
-            ),
-            memory_mib=(
-                self.available.memory_mib
-                - requirements.memory_mib
-            ),
-            vram_mib=(
-                self.available.vram_mib
-                - requirements.vram_mib
-            ),
+            cpu_cores=(self.available.cpu_cores - requirements.cpu_cores),
+            memory_mib=(self.available.memory_mib - requirements.memory_mib),
+            vram_mib=(self.available.vram_mib - requirements.vram_mib),
         )
 
     def release(
@@ -132,18 +115,15 @@ class Node:
         """
         self.available = ResourceRequirements(
             cpu_cores=min(
-                self.available.cpu_cores
-                + requirements.cpu_cores,
+                self.available.cpu_cores + requirements.cpu_cores,
                 self.capacity.cpu_cores,
             ),
             memory_mib=min(
-                self.available.memory_mib
-                + requirements.memory_mib,
+                self.available.memory_mib + requirements.memory_mib,
                 self.capacity.memory_mib,
             ),
             vram_mib=min(
-                self.available.vram_mib
-                + requirements.vram_mib,
+                self.available.vram_mib + requirements.vram_mib,
                 self.capacity.vram_mib,
             ),
         )

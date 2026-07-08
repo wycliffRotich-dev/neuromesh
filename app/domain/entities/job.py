@@ -76,29 +76,20 @@ class Job:
         legitimate.
         """
         if self.resources.cpu_cores <= 0:
-            raise ValueError(
-                "Job must request at least one CPU core."
-            )
+            raise ValueError("Job must request at least one CPU core.")
 
         if self.resources.memory_mib <= 0:
-            raise ValueError(
-                "Job must request a positive amount "
-                "of memory."
-            )
+            raise ValueError("Job must request a positive amount of memory.")
 
     def _transition_to(
         self,
         new_status: JobStatus,
     ) -> None:
-        allowed = self._ALLOWED_TRANSITIONS[
-            self.status
-        ]
+        allowed = self._ALLOWED_TRANSITIONS[self.status]
 
         if new_status not in allowed:
             raise InvalidJobTransition(
-                f"Cannot transition from "
-                f"{self.status.name} to "
-                f"{new_status.name}."
+                f"Cannot transition from {self.status.name} to {new_status.name}."
             )
 
         self.status = new_status
@@ -148,9 +139,7 @@ class Job:
         Consume one retry attempt.
         """
         if not self.can_retry():
-            raise ValueError(
-                "Job has exhausted all retries."
-            )
+            raise ValueError("Job has exhausted all retries.")
 
         self.retry_count += 1
 
@@ -160,9 +149,7 @@ class Job:
         attempt and placing it back into the queue.
         """
         if self.status != JobStatus.FAILED:
-            raise InvalidJobTransition(
-                "Only failed jobs may be retried."
-            )
+            raise InvalidJobTransition("Only failed jobs may be retried.")
 
         self.record_retry()
         self.assigned_node_id = None

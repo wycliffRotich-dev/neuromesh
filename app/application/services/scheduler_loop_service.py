@@ -34,11 +34,7 @@ class SchedulerLoopService:
         nodes = self._node_repository.list_available()
 
         queued_jobs = sorted(
-            (
-                job
-                for job in self._job_repository.list()
-                if job.status == JobStatus.QUEUED
-            ),
+            (job for job in self._job_repository.list() if job.status == JobStatus.QUEUED),
             key=lambda job: job.priority,
             reverse=True,
         )

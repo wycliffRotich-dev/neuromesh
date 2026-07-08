@@ -74,8 +74,5 @@ class Scheduler:
 
         return min(
             candidates,
-            key=lambda node: (
-                node.available.cpu_cores
-                - job.resources.cpu_cores
-            ),
+            key=lambda node: node.available.cpu_cores - job.resources.cpu_cores,
         )

@@ -36,10 +36,7 @@ def test_list_offline_nodes_service_returns_only_offline_nodes() -> None:
         ),
     )
 
-    offline.last_seen_at = (
-        datetime.now(UTC)
-        - timedelta(minutes=2)
-    )
+    offline.last_seen_at = datetime.now(UTC) - timedelta(minutes=2)
 
     repository = InMemoryNodeRepository(
         [

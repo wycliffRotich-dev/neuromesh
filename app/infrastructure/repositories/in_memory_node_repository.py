@@ -47,12 +47,7 @@ class InMemoryNodeRepository(NodeRepository):
         Scheduler through Node.can_host(), so this
         repository only filters unhealthy nodes.
         """
-        return [
-            node
-            for node in self._nodes.values()
-            if node.is_alive()
-            and not node.is_draining()
-        ]
+        return [node for node in self._nodes.values() if node.is_alive() and not node.is_draining()]
 
     def get_by_id(
         self,

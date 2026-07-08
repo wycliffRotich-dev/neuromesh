@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from app.application.services.list_nodes_service import (
     ListNodesService,
 )
@@ -9,7 +11,6 @@ from app.domain.value_objects.resource_requirements import (
 from app.infrastructure.repositories.in_memory_node_repository import (
     InMemoryNodeRepository,
 )
-from datetime import UTC, datetime, timedelta
 
 
 def test_list_nodes_returns_only_alive_nodes() -> None:
@@ -35,10 +36,7 @@ def test_list_nodes_returns_only_alive_nodes() -> None:
         ),
     )
 
-    offline.last_seen_at = (
-        datetime.now(UTC)
-        - timedelta(minutes=2)
-    )
+    offline.last_seen_at = datetime.now(UTC) - timedelta(minutes=2)
 
     repository = InMemoryNodeRepository(
         [

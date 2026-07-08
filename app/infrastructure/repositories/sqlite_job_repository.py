@@ -87,11 +87,7 @@ class SqliteJobRepository(JobRepository):
                 job.max_retries,
                 job.retry_count,
                 job.status.value,
-                (
-                    str(job.assigned_node_id)
-                    if job.assigned_node_id is not None
-                    else None
-                ),
+                (str(job.assigned_node_id) if job.assigned_node_id is not None else None),
                 job.submitted_at.isoformat(),
             ),
         )

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from app.domain.value_objects.resource_requirements import (
-    ResourceRequirements,
-)
 from app.domain.repositories.node_repository import (
     NodeRepository,
+)
+from app.domain.value_objects.resource_requirements import (
+    ResourceRequirements,
 )
 
 

@@ -1,5 +1,6 @@
 from enum import StrEnum
 
+
 class JobStatus(StrEnum):
     SUBMITTED = "SUB,ITTED"
     QUEUED = "QUEUED"

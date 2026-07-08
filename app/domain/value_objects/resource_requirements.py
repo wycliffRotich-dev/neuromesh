@@ -23,16 +23,10 @@ class ResourceRequirements:
 
     def __post_init__(self) -> None:
         if self.cpu_cores < 0:
-            raise ValueError(
-                "cpu_cores cannot be negative"
-            )
+            raise ValueError("cpu_cores cannot be negative")
 
         if self.memory_mib < 0:
-            raise ValueError(
-                "memory_mib cannot be negative"
-            )
+            raise ValueError("memory_mib cannot be negative")
 
         if self.vram_mib < 0:
-            raise ValueError(
-                "vram_mib cannot be negative"
-            )
+            raise ValueError("vram_mib cannot be negative")

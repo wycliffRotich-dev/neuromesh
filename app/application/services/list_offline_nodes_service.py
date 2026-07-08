@@ -24,8 +24,4 @@ class ListOfflineNodesService:
         """
         Retrieve all offline compute nodes.
         """
-        return [
-            node
-            for node in self._node_repository.list()
-            if not node.is_alive()
-        ]
+        return [node for node in self._node_repository.list() if not node.is_alive()]

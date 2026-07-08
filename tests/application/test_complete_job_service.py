@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from app.application.services.complete_job_service import (
     CompleteJobService,
 )

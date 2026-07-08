@@ -13,14 +13,14 @@ class NodeId:
     value: UUID
 
     @classmethod
-    def new(cls) -> "NodeId":
+    def new(cls) -> NodeId:
         return cls(uuid4())
 
     @classmethod
     def from_string(
         cls,
         value: str,
-    ) -> "NodeId":
+    ) -> NodeId:
         return cls(UUID(value))
 
     def __str__(self) -> str:

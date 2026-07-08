@@ -35,20 +35,11 @@ class ClusterUtilizationService:
             if not node.is_alive():
                 continue
 
-            cpu_cores += (
-                node.capacity.cpu_cores
-                - node.available.cpu_cores
-            )
+            cpu_cores += node.capacity.cpu_cores - node.available.cpu_cores
 
-            memory_mib += (
-                node.capacity.memory_mib
-                - node.available.memory_mib
-            )
+            memory_mib += node.capacity.memory_mib - node.available.memory_mib
 
-            vram_mib += (
-                node.capacity.vram_mib
-                - node.available.vram_mib
-            )
+            vram_mib += node.capacity.vram_mib - node.available.vram_mib
 
         return ResourceRequirements(
             cpu_cores=cpu_cores,

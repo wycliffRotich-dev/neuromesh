@@ -13,7 +13,5 @@ class NodeNotFoundError(Exception):
         self,
         node_id: NodeId,
     ) -> None:
-        super().__init__(
-            f"Node with id '{node_id}' was not found."
-        )
+        super().__init__(f"Node with id '{node_id}' was not found.")
         self.node_id = node_id
