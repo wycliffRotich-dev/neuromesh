@@ -1,3 +1,4 @@
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -42,9 +43,10 @@ router = APIRouter(
 )
 def create_job(
     request: CreateJobRequest,
-    service: CreateJobService = Depends(
-        get_create_job_service,
-    ),
+    service: Annotated[
+        CreateJobService,
+        Depends(get_create_job_service),
+    ],
 ) -> CreateJobResponse:
     """
     Create a new job.
@@ -70,9 +72,10 @@ def create_job(
 )
 def get_job(
     job_id: str,
-    service: GetJobService = Depends(
-        get_get_job_service,
-    ),
+    service: Annotated[
+        GetJobService,
+        Depends(get_get_job_service),
+    ],
 ) -> GetJobResponse:
     """
     Retrieve an existing job.

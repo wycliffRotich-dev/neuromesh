@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.application.services.create_node_service import (
@@ -48,9 +50,10 @@ router = APIRouter(
 )
 def create_node(
     request: CreateNodeRequest,
-    service: CreateNodeService = Depends(
-        get_create_node_service,
-    ),
+    service: Annotated[
+        CreateNodeService,
+        Depends(get_create_node_service),
+    ],
 ) -> CreateNodeResponse:
     """
     Create a new compute node.
@@ -73,9 +76,10 @@ def create_node(
     response_model=ListNodesResponse,
 )
 def list_nodes(
-    service: ListNodesService = Depends(
-        get_list_nodes_service,
-    ),
+    service: Annotated[
+        ListNodesService,
+        Depends(get_list_nodes_service),
+    ],
 ) -> ListNodesResponse:
     """
     Return all registered compute nodes.
@@ -104,9 +108,10 @@ def list_nodes(
 )
 def get_node(
     node_id: str,
-    service: GetNodeService = Depends(
-        get_get_node_service,
-    ),
+    service: Annotated[
+        GetNodeService,
+        Depends(get_get_node_service),
+    ],
 ) -> GetNodeResponse:
     """
     Retrieve a compute node by its identifier.
@@ -115,11 +120,11 @@ def get_node(
         node = service.execute(
             NodeId.from_string(node_id),
         )
-    except NodeNotFoundError:
+    except NodeNotFoundError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Node not found.",
-        )
+        ) from err
 
     return GetNodeResponse(
         id=str(node.id),
