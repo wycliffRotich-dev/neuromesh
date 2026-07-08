@@ -24,21 +24,26 @@ class Node:
 
     id: NodeId
     capacity: ResourceRequirements
-
-    available: ResourceRequirements = field(init=False)
-
     labels: dict[str, str] = field(
         default_factory=dict,
     )
-
     last_seen_at: datetime = field(
         default_factory=utc_now,
     )
-
     draining: bool = False
+    available: ResourceRequirements | None = None
 
     def __post_init__(self) -> None:
-        self.available = self.capacity
+        """
+        Default `available` to full capacity only when it
+        was not explicitly provided. This lets a brand-new
+        node start fully free (available == capacity) while
+        still allowing a repository to reconstruct a node
+        from storage with its true, partially-allocated
+        available capacity intact.
+        """
+        if self.available is None:
+            self.available = self.capacity
 
     def heartbeat(self) -> None:
         """
@@ -58,7 +63,6 @@ class Node:
     def drain(self) -> None:
         """
         Mark this node as draining.
-
         Draining nodes continue running existing
         workloads but must not receive newly
         scheduled jobs.
@@ -103,7 +107,6 @@ class Node:
                 "Node does not have enough "
                 "available resources."
             )
-
         self.available = ResourceRequirements(
             cpu_cores=(
                 self.available.cpu_cores

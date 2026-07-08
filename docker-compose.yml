@@ -1,0 +1,13 @@
+services:
+  neuromesh:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      NEUROMESH_STORAGE_BACKEND: sqlite
+      NEUROMESH_DB_PATH: /data/neuromesh.db
+    volumes:
+      - neuromesh-data:/data
+
+volumes:
+  neuromesh-data:
