@@ -1,12 +1,10 @@
+import { Shell } from "./components/layout/Shell";
+import DashboardPage from "./pages/DashboardPage";
+
 export default function App() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        padding: "2rem",
-      }}
-    >
-      <h1>NeuroMesh</h1>
-    </main>
+    <Shell>
+      <DashboardPage />
+    </Shell>
   );
 }
