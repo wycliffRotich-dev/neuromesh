@@ -9,11 +9,12 @@ export function useNodes() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
     try {
+      setLoading(true);
+      setError(null);
+
       const response = await fetchNodes();
+
       setNodes(response.nodes);
     } catch (err) {
       if (err instanceof Error) {

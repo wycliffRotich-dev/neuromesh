@@ -3,9 +3,10 @@ import { ClusterChart } from "../components/dashboard/ClusterChart";
 import { ClusterHealth } from "../components/dashboard/ClusterHealth";
 import { ResourceUsage } from "../components/dashboard/ResourceUsage";
 import { StatCard } from "../components/dashboard/StatCard";
+import { RecentJobs } from "../components/jobs/RecentJobs";
 import { NodeTable } from "../components/nodes/NodeTable";
 import { RegisterNodeForm } from "../components/nodes/RegisterNodeForm";
-import { RecentJobs } from "../components/jobs/RecentJobs";
+import { SubmitJobForm } from "../components/jobs/SubmitJobForm";
 import { useNodes } from "../hooks/useNodes";
 
 export default function DashboardPage() {
@@ -18,7 +19,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex-1 p-8 text-white">
+      <main className="flex-1 bg-slate-950 p-8 text-white">
         Loading cluster...
       </main>
     );
@@ -26,7 +27,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <main className="flex-1 p-8 text-red-400">
+      <main className="flex-1 bg-slate-950 p-8 text-red-400">
         {error}
       </main>
     );
@@ -53,7 +54,9 @@ export default function DashboardPage() {
         Dashboard
       </h1>
 
-      <ClusterHealth nodes={nodes.length} />
+      <ClusterHealth
+        nodes={nodes.length}
+      />
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -77,19 +80,31 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <RegisterNodeForm
           onCreated={refresh}
         />
+
+        <SubmitJobForm
+          onSubmitted={refresh}
+        />
       </div>
 
-      <ResourceUsage nodes={nodes} />
+      <ResourceUsage
+        nodes={nodes}
+      />
 
-      <ClusterChart nodes={nodes} />
+      <ClusterChart
+        nodes={nodes}
+      />
 
-      <NodeTable nodes={nodes} />
+      <NodeTable
+        nodes={nodes}
+      />
 
-      <RecentJobs jobs={[]} />
+      <RecentJobs
+        jobs={[]}
+      />
 
       <ActivityFeed />
     </main>
