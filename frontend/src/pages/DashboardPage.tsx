@@ -1,4 +1,5 @@
 import { ActivityFeed } from "../components/dashboard/ActivityFeed";
+import { ClusterChart } from "../components/dashboard/ClusterChart";
 import { ClusterHealth } from "../components/dashboard/ClusterHealth";
 import { ResourceUsage } from "../components/dashboard/ResourceUsage";
 import { StatCard } from "../components/dashboard/StatCard";
@@ -70,6 +71,10 @@ export default function DashboardPage() {
       </div>
 
       <ResourceUsage nodes={nodes} />
+
+      <div className="mt-8">
+        <ClusterChart />
+      </div>
 
       <div className="mt-8 grid gap-8 xl:grid-cols-2">
         <NodeTable nodes={nodes} />
