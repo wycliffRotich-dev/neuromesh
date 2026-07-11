@@ -1,3 +1,4 @@
+import { ClusterHealth } from "../components/dashboard/ClusterHealth";
 import { StatCard } from "../components/dashboard/StatCard";
 import { NodeTable } from "../components/nodes/NodeTable";
 import { useNodes } from "../hooks/useNodes";
@@ -7,43 +8,63 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex-1 p-8">
-        <h1 className="mb-8 text-3xl font-bold text-white">
-          Dashboard
-        </h1>
-
-        <p className="text-gray-400">Loading cluster...</p>
+      <main className="flex-1 p-8 text-white">
+        Loading cluster...
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="flex-1 p-8">
-        <h1 className="mb-8 text-3xl font-bold text-white">
-          Dashboard
-        </h1>
-
-        <p className="text-red-400">{error}</p>
+      <main className="flex-1 p-8 text-red-400">
+        {error}
       </main>
     );
   }
 
+  const totalCpu = nodes.reduce(
+    (sum, node) => sum + node.cpu_cores,
+    0,
+  );
+
+  const totalMemory = nodes.reduce(
+    (sum, node) => sum + node.memory_mib,
+    0,
+  );
+
+  const totalVram = nodes.reduce(
+    (sum, node) => sum + node.vram_mib,
+    0,
+  );
+
   return (
-    <main className="flex-1 p-8">
+    <main className="flex-1 bg-slate-950 p-8">
       <h1 className="mb-8 text-3xl font-bold text-white">
         Dashboard
       </h1>
 
-      <div className="mb-8 grid grid-cols-4 gap-6">
+      <ClusterHealth nodes={nodes.length} />
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Nodes"
-          value={nodes.length.toString()}
+          title="Registered Nodes"
+          value={nodes.length}
         />
 
-        <StatCard title="Jobs" value="0" />
-        <StatCard title="Running" value="0" />
-        <StatCard title="GPU Utilization" value="0%" />
+        <StatCard
+          title="CPU Cores"
+          value={totalCpu}
+        />
+
+        <StatCard
+          title="Memory (MiB)"
+          value={totalMemory.toLocaleString()}
+        />
+
+        <StatCard
+          title="VRAM (MiB)"
+          value={totalVram.toLocaleString()}
+        />
       </div>
 
       <NodeTable nodes={nodes} />
