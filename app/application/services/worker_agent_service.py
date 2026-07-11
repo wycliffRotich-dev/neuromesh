@@ -1,4 +1,5 @@
 from app.domain.workers.worker_agent import WorkerAgent
+
 from app.domain.entities.job import Job
 
 
