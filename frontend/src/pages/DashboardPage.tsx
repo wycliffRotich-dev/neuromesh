@@ -1,3 +1,4 @@
+import { ActivityFeed } from "../components/dashboard/ActivityFeed";
 import { ClusterHealth } from "../components/dashboard/ClusterHealth";
 import { ResourceUsage } from "../components/dashboard/ResourceUsage";
 import { StatCard } from "../components/dashboard/StatCard";
@@ -9,7 +10,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex-1 p-8 text-white">
+      <main className="flex-1 bg-slate-950 p-8 text-white">
         Loading cluster...
       </main>
     );
@@ -17,7 +18,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <main className="flex-1 p-8 text-red-400">
+      <main className="flex-1 bg-slate-950 p-8 text-red-400">
         {error}
       </main>
     );
@@ -70,7 +71,11 @@ export default function DashboardPage() {
 
       <ResourceUsage nodes={nodes} />
 
-      <NodeTable nodes={nodes} />
+      <div className="mt-8 grid gap-8 xl:grid-cols-2">
+        <NodeTable nodes={nodes} />
+
+        <ActivityFeed />
+      </div>
     </main>
   );
 }
