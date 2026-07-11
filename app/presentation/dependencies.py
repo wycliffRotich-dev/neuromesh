@@ -17,8 +17,15 @@ from app.application.services.get_node_service import (
 from app.application.services.list_nodes_service import (
     ListNodesService,
 )
-from app.domain.repositories.job_repository import JobRepository
-from app.domain.repositories.node_repository import NodeRepository
+from app.application.services.scheduler_service import (
+    SchedulerService,
+)
+from app.domain.repositories.job_repository import (
+    JobRepository,
+)
+from app.domain.repositories.node_repository import (
+    NodeRepository,
+)
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
 )
@@ -41,14 +48,9 @@ def _build_repositories() -> tuple[
     NodeRepository,
 ]:
     """
-    Choose the repository backend based on the
-    NEUROMESH_STORAGE_BACKEND environment variable.
-
-    Defaults to "memory" for local development and tests,
-    so existing behavior is unchanged unless explicitly
-    configured otherwise. Set to "sqlite" (optionally with
-    NEUROMESH_DB_PATH) for persistence across restarts.
+    Choose the repository backend.
     """
+
     backend = os.getenv(
         "NEUROMESH_STORAGE_BACKEND",
         "memory",
@@ -59,11 +61,18 @@ def _build_repositories() -> tuple[
             "NEUROMESH_DB_PATH",
             "neuromesh.db",
         )
-        connection = create_connection(db_path)
+
+        connection = create_connection(
+            db_path,
+        )
 
         return (
-            SqliteJobRepository(connection),
-            SqliteNodeRepository(connection),
+            SqliteJobRepository(
+                connection,
+            ),
+            SqliteNodeRepository(
+                connection,
+            ),
         )
 
     return (
@@ -72,24 +81,33 @@ def _build_repositories() -> tuple[
     )
 
 
-_job_repository, _node_repository = _build_repositories()
+_job_repository, _node_repository = (
+    _build_repositories()
+)
+
+
+_scheduler_service = SchedulerService(
+    node_repository=_node_repository,
+    job_repository=_job_repository,
+)
 
 
 def get_create_job_service() -> CreateJobService:
     """
-    Return the application service responsible
-    for creating jobs.
+    Return CreateJobService.
     """
+
     return CreateJobService(
         job_repository=_job_repository,
+        scheduler_service=_scheduler_service,
     )
 
 
 def get_get_job_service() -> GetJobService:
     """
-    Return the application service responsible
-    for retrieving jobs.
+    Return GetJobService.
     """
+
     return GetJobService(
         job_repository=_job_repository,
     )
@@ -97,9 +115,9 @@ def get_get_job_service() -> GetJobService:
 
 def get_create_node_service() -> CreateNodeService:
     """
-    Return the application service responsible
-    for creating compute nodes.
+    Return CreateNodeService.
     """
+
     return CreateNodeService(
         node_repository=_node_repository,
     )
@@ -107,9 +125,9 @@ def get_create_node_service() -> CreateNodeService:
 
 def get_get_node_service() -> GetNodeService:
     """
-    Return the application service responsible
-    for retrieving compute nodes.
+    Return GetNodeService.
     """
+
     return GetNodeService(
         node_repository=_node_repository,
     )
@@ -117,9 +135,9 @@ def get_get_node_service() -> GetNodeService:
 
 def get_list_nodes_service() -> ListNodesService:
     """
-    Return the application service responsible
-    for listing compute nodes.
+    Return ListNodesService.
     """
+
     return ListNodesService(
         node_repository=_node_repository,
     )

@@ -7,8 +7,13 @@ client = TestClient(app)
 
 def test_create_job_returns_201() -> None:
     """
-    Creating a job through the API should return HTTP 201.
+    Creating a job through the API should return
+    HTTP 201.
+
+    When no compute nodes are available the job
+    should immediately enter the QUEUED state.
     """
+
     response = client.post(
         "/jobs",
         json={
@@ -23,4 +28,4 @@ def test_create_job_returns_201() -> None:
     body = response.json()
 
     assert "id" in body
-    assert body["status"] == "SUBMITTED"
+    assert body["status"] == "QUEUED"

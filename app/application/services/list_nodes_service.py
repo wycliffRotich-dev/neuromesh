@@ -9,7 +9,8 @@ from app.domain.repositories.node_repository import (
 class ListNodesService:
     """
     Application service responsible for listing
-    available compute nodes.
+    registered compute nodes that are currently
+    alive.
     """
 
     def __init__(
@@ -22,7 +23,11 @@ class ListNodesService:
         self,
     ) -> list[Node]:
         """
-        Retrieve all compute nodes that are
-        currently available for scheduling.
+        Retrieve all compute nodes that have sent
+        a heartbeat within the configured timeout.
         """
-        return self._node_repository.list_available()
+        return [
+            node
+            for node in self._node_repository.list()
+            if node.is_alive()
+        ]

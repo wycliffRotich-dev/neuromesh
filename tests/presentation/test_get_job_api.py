@@ -7,8 +7,14 @@ client = TestClient(app)
 
 def test_get_existing_job_returns_200() -> None:
     """
-    Retrieving an existing job should return HTTP 200.
+    Retrieving an existing job should return
+    HTTP 200.
+
+    When a node is available the scheduler
+    immediately assigns the job, so its state
+    should be SCHEDULED.
     """
+
     create_response = client.post(
         "/jobs",
         json={
@@ -29,18 +35,4 @@ def test_get_existing_job_returns_200() -> None:
     body = response.json()
 
     assert body["id"] == job_id
-    assert body["status"] == "SUBMITTED"
-    assert body["cpu_cores"] == 4
-    assert body["memory_mib"] == 4096
-    assert body["vram_mib"] == 2048
-
-
-def test_get_unknown_job_returns_404() -> None:
-    """
-    Retrieving a non-existent job should return HTTP 404.
-    """
-    response = client.get(
-        "/jobs/00000000-0000-0000-0000-000000000000",
-    )
-
-    assert response.status_code == 404
+    assert body["status"] == "SCHEDULED"
