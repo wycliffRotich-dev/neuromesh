@@ -1,4 +1,5 @@
 import { ClusterHealth } from "../components/dashboard/ClusterHealth";
+import { ResourceUsage } from "../components/dashboard/ResourceUsage";
 import { StatCard } from "../components/dashboard/StatCard";
 import { NodeTable } from "../components/nodes/NodeTable";
 import { useNodes } from "../hooks/useNodes";
@@ -66,6 +67,8 @@ export default function DashboardPage() {
           value={totalVram.toLocaleString()}
         />
       </div>
+
+      <ResourceUsage nodes={nodes} />
 
       <NodeTable nodes={nodes} />
     </main>
