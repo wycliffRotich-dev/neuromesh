@@ -8,28 +8,48 @@ import {
   YAxis,
 } from "recharts";
 
+import type { NodeResponse } from "../../api/types";
 import { SectionCard } from "./SectionCard";
 
-const data = [
-  {
-    name: "CPU",
-    used: 18,
-  },
-  {
-    name: "Memory",
-    used: 62,
-  },
-  {
-    name: "VRAM",
-    used: 34,
-  },
-];
+type Props = {
+  nodes: NodeResponse[];
+};
 
-export function ClusterChart() {
+export function ClusterChart({ nodes }: Props) {
+  const totalCpu = nodes.reduce(
+    (sum, node) => sum + node.cpu_cores,
+    0,
+  );
+
+  const totalMemory = nodes.reduce(
+    (sum, node) => sum + node.memory_mib,
+    0,
+  );
+
+  const totalVram = nodes.reduce(
+    (sum, node) => sum + node.vram_mib,
+    0,
+  );
+
+  const data = [
+    {
+      name: "CPU",
+      used: totalCpu,
+    },
+    {
+      name: "Memory",
+      used: totalMemory,
+    },
+    {
+      name: "VRAM",
+      used: totalVram,
+    },
+  ];
+
   return (
     <SectionCard
       title="Cluster Resource Overview"
-      subtitle="Current cluster utilization"
+      subtitle="Aggregated cluster capacity"
     >
       <div className="h-72">
         <ResponsiveContainer

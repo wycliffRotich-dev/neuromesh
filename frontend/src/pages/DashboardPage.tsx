@@ -4,14 +4,21 @@ import { ClusterHealth } from "../components/dashboard/ClusterHealth";
 import { ResourceUsage } from "../components/dashboard/ResourceUsage";
 import { StatCard } from "../components/dashboard/StatCard";
 import { NodeTable } from "../components/nodes/NodeTable";
+import { RegisterNodeForm } from "../components/nodes/RegisterNodeForm";
+import { RecentJobs } from "../components/jobs/RecentJobs";
 import { useNodes } from "../hooks/useNodes";
 
 export default function DashboardPage() {
-  const { nodes, loading, error } = useNodes();
+  const {
+    nodes,
+    loading,
+    error,
+    refresh,
+  } = useNodes();
 
   if (loading) {
     return (
-      <main className="flex-1 bg-slate-950 p-8 text-white">
+      <main className="flex-1 p-8 text-white">
         Loading cluster...
       </main>
     );
@@ -19,7 +26,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <main className="flex-1 bg-slate-950 p-8 text-red-400">
+      <main className="flex-1 p-8 text-red-400">
         {error}
       </main>
     );
@@ -48,7 +55,7 @@ export default function DashboardPage() {
 
       <ClusterHealth nodes={nodes.length} />
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Registered Nodes"
           value={nodes.length}
@@ -70,17 +77,21 @@ export default function DashboardPage() {
         />
       </div>
 
+      <div className="mt-8">
+        <RegisterNodeForm
+          onCreated={refresh}
+        />
+      </div>
+
       <ResourceUsage nodes={nodes} />
 
-      <div className="mt-8">
-        <ClusterChart />
-      </div>
+      <ClusterChart nodes={nodes} />
 
-      <div className="mt-8 grid gap-8 xl:grid-cols-2">
-        <NodeTable nodes={nodes} />
+      <NodeTable nodes={nodes} />
 
-        <ActivityFeed />
-      </div>
+      <RecentJobs jobs={[]} />
+
+      <ActivityFeed />
     </main>
   );
 }
