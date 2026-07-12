@@ -13,7 +13,7 @@ class WorkerId:
     value: UUID
 
     @classmethod
-    def new(cls) -> "WorkerId":
+    def new(cls) -> WorkerId:
         return cls(
             uuid4(),
         )
