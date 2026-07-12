@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from app.domain.entities.job import Job
 from app.domain.entities.node import Node
 from app.domain.enums.worker_status import WorkerStatus
+from app.domain.value_objects.worker_id import WorkerId
 
 
 def utc_now() -> datetime:
@@ -19,7 +20,7 @@ class Worker:
     executing jobs on behalf of a compute node.
     """
 
-    id: str
+    id: WorkerId
     node: Node
 
     status: WorkerStatus = WorkerStatus.STARTING

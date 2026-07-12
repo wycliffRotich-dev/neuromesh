@@ -10,9 +10,10 @@ class RegisterWorkerService:
     """
     Registers a worker with the cluster.
 
-    A worker starts in the STARTING state before
-    transitioning to IDLE once it is ready to
-    receive work.
+    Newly registered workers begin in the
+    STARTING state. They transition to IDLE
+    only after successfully reporting their
+    first heartbeat.
     """
 
     def __init__(
@@ -26,14 +27,8 @@ class RegisterWorkerService:
         worker: Worker,
     ) -> Worker:
         """
-        Register a worker in the repository.
-
-        Newly registered workers are transitioned
-        to the IDLE state, indicating they are
-        available to accept scheduled jobs.
+        Persist a newly registered worker.
         """
-        worker.ready()
-
         self._worker_repository.save(
             worker,
         )

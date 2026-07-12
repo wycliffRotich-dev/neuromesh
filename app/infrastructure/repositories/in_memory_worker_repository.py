@@ -4,6 +4,7 @@ from app.domain.entities.worker import Worker
 from app.domain.repositories.worker_repository import (
     WorkerRepository,
 )
+from app.domain.value_objects.worker_id import WorkerId
 
 
 class InMemoryWorkerRepository(WorkerRepository):
@@ -17,7 +18,7 @@ class InMemoryWorkerRepository(WorkerRepository):
         self,
         workers: list[Worker] | None = None,
     ) -> None:
-        self._workers: dict[str, Worker] = {}
+        self._workers: dict[WorkerId, Worker] = {}
 
         for worker in workers or []:
             self.save(worker)
@@ -33,7 +34,7 @@ class InMemoryWorkerRepository(WorkerRepository):
 
     def get_by_id(
         self,
-        worker_id: str,
+        worker_id: WorkerId,
     ) -> Worker | None:
         """
         Retrieve a worker by its identifier.
@@ -52,7 +53,7 @@ class InMemoryWorkerRepository(WorkerRepository):
 
     def delete(
         self,
-        worker_id: str,
+        worker_id: WorkerId,
     ) -> None:
         """
         Remove a worker.

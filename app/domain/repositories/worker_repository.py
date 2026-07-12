@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from app.domain.entities.worker import Worker
+from app.domain.value_objects.worker_id import WorkerId
 
 
 class WorkerRepository(ABC):
@@ -22,7 +23,7 @@ class WorkerRepository(ABC):
     @abstractmethod
     def get_by_id(
         self,
-        worker_id: str,
+        worker_id: WorkerId,
     ) -> Worker | None:
         """
         Retrieve a worker by its identifier.
@@ -39,7 +40,7 @@ class WorkerRepository(ABC):
     @abstractmethod
     def delete(
         self,
-        worker_id: str,
+        worker_id: WorkerId,
     ) -> None:
         """
         Remove a worker.

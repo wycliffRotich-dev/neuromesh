@@ -7,6 +7,9 @@ from app.presentation.routers.jobs import (
 from app.presentation.routers.nodes import (
     router as nodes_router,
 )
+from app.presentation.routers.workers import (
+    router as workers_router,
+)
 
 app = FastAPI(
     title="NeuroMesh API",
@@ -26,8 +29,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(jobs_router)
-app.include_router(nodes_router)
+app.include_router(
+    jobs_router,
+)
+
+app.include_router(
+    nodes_router,
+)
+
+app.include_router(
+    workers_router,
+)
 
 
 @app.get("/")

@@ -8,6 +8,9 @@ from app.application.services.create_job_service import (
 from app.application.services.create_node_service import (
     CreateNodeService,
 )
+from app.application.services.create_worker_service import (
+    CreateWorkerService,
+)
 from app.application.services.get_job_service import (
     GetJobService,
 )
@@ -26,11 +29,17 @@ from app.domain.repositories.job_repository import (
 from app.domain.repositories.node_repository import (
     NodeRepository,
 )
+from app.domain.repositories.worker_repository import (
+    WorkerRepository,
+)
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
 )
 from app.infrastructure.repositories.in_memory_node_repository import (
     InMemoryNodeRepository,
+)
+from app.infrastructure.repositories.in_memory_worker_repository import (
+    InMemoryWorkerRepository,
 )
 from app.infrastructure.repositories.sqlite_connection import (
     create_connection,
@@ -46,6 +55,7 @@ from app.infrastructure.repositories.sqlite_node_repository import (
 def _build_repositories() -> tuple[
     JobRepository,
     NodeRepository,
+    WorkerRepository,
 ]:
     """
     Choose the repository backend.
@@ -73,15 +83,17 @@ def _build_repositories() -> tuple[
             SqliteNodeRepository(
                 connection,
             ),
+            InMemoryWorkerRepository(),
         )
 
     return (
         InMemoryJobRepository(),
         InMemoryNodeRepository(),
+        InMemoryWorkerRepository(),
     )
 
 
-_job_repository, _node_repository = (
+_job_repository, _node_repository, _worker_repository = (
     _build_repositories()
 )
 
@@ -140,4 +152,14 @@ def get_list_nodes_service() -> ListNodesService:
 
     return ListNodesService(
         node_repository=_node_repository,
+    )
+
+
+def get_create_worker_service() -> CreateWorkerService:
+    """
+    Return CreateWorkerService.
+    """
+
+    return CreateWorkerService(
+        worker_repository=_worker_repository,
     )
