@@ -7,7 +7,7 @@ from app.domain.entities.worker import Worker
 
 class WorkerRepository(ABC):
     """
-    Repository interface for Worker aggregates.
+    Repository contract for persisting workers.
     """
 
     @abstractmethod
@@ -15,28 +15,32 @@ class WorkerRepository(ABC):
         self,
         worker: Worker,
     ) -> None:
-        """Persist a worker."""
-        raise NotImplementedError
+        """
+        Persist a worker.
+        """
 
     @abstractmethod
     def get_by_id(
         self,
         worker_id: str,
-    ) -> Worker:
-        """Retrieve a worker by its identifier."""
-        raise NotImplementedError
+    ) -> Worker | None:
+        """
+        Retrieve a worker by its identifier.
+        """
 
     @abstractmethod
-    def list_all(
+    def list(
         self,
     ) -> list[Worker]:
-        """Return all registered workers."""
-        raise NotImplementedError
+        """
+        Return every registered worker.
+        """
 
     @abstractmethod
     def delete(
         self,
         worker_id: str,
     ) -> None:
-        """Remove a worker."""
-        raise NotImplementedError
+        """
+        Remove a worker.
+        """

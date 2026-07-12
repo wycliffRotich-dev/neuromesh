@@ -16,7 +16,7 @@ def utc_now() -> datetime:
 class Worker:
     """
     Represents a worker process responsible for
-    executing jobs on a compute node.
+    executing jobs on behalf of a compute node.
     """
 
     id: str
@@ -30,23 +30,39 @@ class Worker:
         default_factory=utc_now,
     )
 
-    def heartbeat(self) -> None:
+    def heartbeat(
+        self,
+    ) -> None:
         """
         Record that this worker is alive.
         """
         self.last_seen_at = utc_now()
 
-    def ready(self) -> None:
+    def ready(
+        self,
+    ) -> None:
         """
-        Mark this worker as ready to accept work.
+        Transition the worker into the IDLE state.
         """
         self.status = WorkerStatus.IDLE
 
-    def accept(self, job: Job) -> None:
+    def is_idle(
+        self,
+    ) -> bool:
+        """
+        Return True when the worker is available
+        to execute a job.
+        """
+        return self.status is WorkerStatus.IDLE
+
+    def accept(
+        self,
+        job: Job,
+    ) -> None:
         """
         Accept a scheduled job.
         """
-        if self.status != WorkerStatus.IDLE:
+        if not self.is_idle():
             raise ValueError(
                 "Worker is not accepting jobs."
             )
@@ -59,7 +75,9 @@ class Worker:
         self.running_job = job
         self.status = WorkerStatus.BUSY
 
-    def start(self) -> None:
+    def start(
+        self,
+    ) -> None:
         """
         Start the assigned job.
         """
@@ -70,7 +88,9 @@ class Worker:
 
         self.running_job.start()
 
-    def complete(self) -> None:
+    def complete(
+        self,
+    ) -> None:
         """
         Complete the running job.
         """
@@ -84,9 +104,11 @@ class Worker:
         self.running_job = None
         self.status = WorkerStatus.IDLE
 
-    def fail(self) -> None:
+    def fail(
+        self,
+    ) -> None:
         """
-        Fail the running job.
+        Mark the running job as failed.
         """
         if self.running_job is None:
             raise ValueError(
@@ -98,8 +120,11 @@ class Worker:
         self.running_job = None
         self.status = WorkerStatus.IDLE
 
-    def drain(self) -> None:
+    def drain(
+        self,
+    ) -> None:
         """
-        Prevent new work from being assigned.
+        Prevent the worker from accepting
+        new work.
         """
         self.status = WorkerStatus.DRAINING
