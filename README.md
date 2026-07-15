@@ -9,9 +9,9 @@
 [![React](https://img.shields.io/badge/React-TypeScript-61DAFB?logo=react&logoColor=black)](#tech-stack)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#tech-stack)
 
-NeuroMesh takes workloads, matches them against available compute nodes based on resource requirements and constraints, and manages the full lifecycle — queued, scheduled, running, completed, failed, retried.
+NeuroMesh takes workloads, matches them against available compute nodes based on resource requirements and constraints, and manages the full lifecycle; queued, scheduled, running, completed, failed, retried.
 
-This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementation of **Clean Architecture** and **Domain-Driven Design** applied to a scheduling problem — where the architectural boundaries are enforced by tests, not just diagrams, and every non-obvious decision is written down as an ADR.
+This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementation of **Clean Architecture** and **Domain-Driven Design** applied to a scheduling problem, where the architectural boundaries are enforced by tests, not just diagrams, and every non-obvious decision is written down as an ADR.
 
 ---
 
@@ -34,7 +34,7 @@ This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementa
 
 Most scheduler side-projects are a single `main.py` script wrapped in a `while True` loop polling an in-memory dictionary. They work fine — right up until you need to swap the persistence engine, add a new constraint type, or figure out why a job silently disappeared.
 
-NeuroMesh was built around one rule: **the domain logic doesn't know or care where the data lives.** Jobs, nodes, and the allocation algorithm are pure Python with zero infrastructure dependencies. The database is a detail, not the foundation. This project is a concrete demonstration that these architectural patterns aren't just conference-talk vocabulary — they're guardrails that keep a codebase understandable as it grows.
+NeuroMesh was built around one rule: **the domain logic doesn't know or care where the data lives.** Jobs, nodes, and the allocation algorithm are pure Python with zero infrastructure dependencies. The database is a detail, not the foundation. This project is a concrete demonstration that these architectural patterns aren't just conference-talk vocabulary, they're guardrails that keep a codebase understandable as it grows.
 
 ---
 
@@ -51,22 +51,22 @@ NeuroMesh was built around one rule: **the domain logic doesn't know or care whe
 
 The system is split into four layers, with dependencies pointing inward:
 
-**Domain** — Job and Node aggregates enforce their own invariants. The scheduling algorithm lives here as plain Python, with no imports from FastAPI or psycopg. Delete the infrastructure layer entirely and the domain tests still pass.
+**Domain**: Job and Node aggregates enforce their own invariants. The scheduling algorithm lives here as plain Python, with no imports from FastAPI or psycopg. Delete the infrastructure layer entirely and the domain tests still pass.
 
-**Application** — Services like `ScheduleJobService`, `AssignWorkerService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down.
+**Application**: Services like `ScheduleJobService`, `AssignWorkerService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down.
 
-**Infrastructure** — Two repository implementations, SQLite and PostgreSQL, both written with raw `psycopg` instead of an ORM — a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. Both implementations are validated against the same **contract test suite**, so switching between them is a tested guarantee, not an assumption.
+**Infrastructure**: Two repository implementations, SQLite and PostgreSQL, both written with raw `psycopg` instead of an ORM — a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. Both implementations are validated against the same **contract test suite**, so switching between them is a tested guarantee, not an assumption.
 
-**Presentation** — FastAPI endpoints that validate input, call an application service, and return a response. No business logic lives here.
+**Presentation**: FastAPI endpoints that validate input, call an application service, and return a response. No business logic lives here.
 
-Every non-obvious decision — why domain owns scheduling instead of application, why raw psycopg over an ORM, how job lifecycle transitions are enforced — is documented as an ADR in `/docs/adr`.
+Every non-obvious decision, why domain owns scheduling instead of application, why raw psycopg over an ORM, how job lifecycle transitions are enforced, is documented as an ADR in `/docs/adr`.
 
 ---
 
 ## Test Coverage
 
 89+ tests across domain, application, infrastructure, and API layers:
-- Full domain logic coverage — job lifecycle, retry policy, constraint matching, node liveness
+- Full domain logic coverage; job lifecycle, retry policy, constraint matching, node liveness
 - Contract tests proving SQLite and Postgres repositories behave identically
 - Application service tests for every use case
 - API-level tests against real FastAPI endpoints
@@ -107,4 +107,4 @@ CI runs the full test suite against a live Postgres service on every push — se
 
 ## Scope
 
-This isn't trying to compete with Kubernetes or Ray at scale — it's a demonstration of how to build a system that stays understandable as it grows: layered correctly, tested honestly, and documented well enough that someone else could pick it up and know exactly why every piece is where it is.
+This isn't trying to compete with Kubernetes or Ray at scale, it's a demonstration of how to build a system that stays understandable as it grows: layered correctly, tested honestly, and documented well enough that someone else could pick it up and know exactly why every piece is where it is.
