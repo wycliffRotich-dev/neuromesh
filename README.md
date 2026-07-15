@@ -32,7 +32,7 @@ This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementa
 
 ## Why This Exists
 
-Most scheduler side-projects are a single `main.py` script wrapped in a `while True` loop polling an in-memory dictionary. They work fine — right up until you need to swap the persistence engine, add a new constraint type, or figure out why a job silently disappeared.
+Most scheduler side-projects are a single `main.py` script wrapped in a `while True` loop polling an in-memory dictionary. They work fine, right up until you need to swap the persistence engine, add a new constraint type, or figure out why a job silently disappeared.
 
 NeuroMesh was built around one rule: **the domain logic doesn't know or care where the data lives.** Jobs, nodes, and the allocation algorithm are pure Python with zero infrastructure dependencies. The database is a detail, not the foundation. This project is a concrete demonstration that these architectural patterns aren't just conference-talk vocabulary, they're guardrails that keep a codebase understandable as it grows.
 
@@ -40,10 +40,10 @@ NeuroMesh was built around one rule: **the domain logic doesn't know or care whe
 
 ## Key Capabilities
 
-- **Job lifecycle management** — explicit state transitions (Queued → Scheduled → Running → Completed/Failed) with configurable retry policies and priority-aware scheduling
-- **Constraint-aware best-fit allocator** — matches workloads to nodes based on resource requirements and labels, while skipping nodes that are draining or offline
-- **Node liveness tracking** — heartbeat-based health checks, automatic detection of offline nodes, and resource reclamation when work fails or nodes disappear
-- **Live dashboard** — submit jobs, register nodes, and watch cluster health, resource usage, and activity in real time
+- **Job lifecycle management**; explicit state transitions (Queued → Scheduled → Running → Completed/Failed) with configurable retry policies and priority-aware scheduling
+- **Constraint-aware best-fit allocator**; matches workloads to nodes based on resource requirements and labels, while skipping nodes that are draining or offline
+- **Node liveness tracking**; heartbeat-based health checks, automatic detection of offline nodes, and resource reclamation when work fails or nodes disappear
+- **Live dashboard**; submit jobs, register nodes, and watch cluster health, resource usage, and activity in real time
 
 ---
 
@@ -55,7 +55,7 @@ The system is split into four layers, with dependencies pointing inward:
 
 **Application**: Services like `ScheduleJobService`, `AssignWorkerService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down.
 
-**Infrastructure**: Two repository implementations, SQLite and PostgreSQL, both written with raw `psycopg` instead of an ORM — a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. Both implementations are validated against the same **contract test suite**, so switching between them is a tested guarantee, not an assumption.
+**Infrastructure**: Two repository implementations, SQLite and PostgreSQL, both written with raw `psycopg` instead of an ORM, a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. Both implementations are validated against the same **contract test suite**, so switching between them is a tested guarantee, not an assumption.
 
 **Presentation**: FastAPI endpoints that validate input, call an application service, and return a response. No business logic lives here.
 
@@ -93,7 +93,7 @@ npm install
 npm run dev
 ```
 
-CI runs the full test suite against a live Postgres service on every push — see `.github/workflows`.
+CI runs the full test suite against a live Postgres service on every push, see `.github/workflows`.
 
 ---
 
