@@ -1,5 +1,5 @@
-from app.domain.entities.worker import Worker
 from app.domain.entities.job import Job
+from app.domain.entities.worker import Worker
 
 
 class WorkerAgentService:

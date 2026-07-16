@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+from app.application.services.assign_worker_service import (
+    AssignWorkerService,
+)
 from app.domain.enums.job_status import JobStatus
 from app.domain.repositories.job_repository import JobRepository
 from app.domain.repositories.node_repository import NodeRepository
 from app.domain.services.scheduler import Scheduler
-
-from app.application.services.assign_worker_service import (
-    AssignWorkerService,
-)
 
 
 class SchedulerLoopService:
