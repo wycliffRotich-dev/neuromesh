@@ -1,5 +1,4 @@
-from app.domain.workers.worker_agent import WorkerAgent
-
+from app.domain.entities.worker import Worker
 from app.domain.entities.job import Job
 
 
@@ -7,32 +6,25 @@ class WorkerAgentService:
 
     def assign(
         self,
-        worker: WorkerAgent,
+        worker: Worker,
         job: Job,
     ) -> None:
-
-        worker.accept_job(job)
-
+        worker.accept(job)
 
     def start(
         self,
-        worker: WorkerAgent,
+        worker: Worker,
     ) -> None:
-
-        worker.execute()
-
+        worker.start()
 
     def complete(
         self,
-        worker: WorkerAgent,
+        worker: Worker,
     ) -> None:
-
         worker.complete()
-
 
     def fail(
         self,
-        worker: WorkerAgent,
+        worker: Worker,
     ) -> None:
-
         worker.fail()

@@ -2,16 +2,22 @@ from __future__ import annotations
 
 from app.domain.enums.job_status import JobStatus
 from app.domain.repositories.job_repository import JobRepository
-from app.domain.repositories.node_repository import (
-    NodeRepository,
-)
+from app.domain.repositories.node_repository import NodeRepository
 from app.domain.services.scheduler import Scheduler
+
+from app.application.services.assign_worker_service import (
+    AssignWorkerService,
+)
 
 
 class SchedulerLoopService:
     """
     Application service responsible for
     scheduling queued jobs onto healthy nodes.
+
+    After node allocation, an available worker
+    may be assigned automatically when the
+    worker scheduling capability is provided.
     """
 
     def __init__(
@@ -19,10 +25,14 @@ class SchedulerLoopService:
         job_repository: JobRepository,
         node_repository: NodeRepository,
         scheduler: Scheduler,
+        assign_worker_service: AssignWorkerService | None = None,
     ) -> None:
+
         self._job_repository = job_repository
         self._node_repository = node_repository
         self._scheduler = scheduler
+        self._assign_worker_service = assign_worker_service
+
 
     def execute(
         self,
@@ -34,12 +44,17 @@ class SchedulerLoopService:
         nodes = self._node_repository.list_available()
 
         queued_jobs = sorted(
-            (job for job in self._job_repository.list() if job.status == JobStatus.QUEUED),
+            (
+                job
+                for job in self._job_repository.list()
+                if job.status == JobStatus.QUEUED
+            ),
             key=lambda job: job.priority,
             reverse=True,
         )
 
         for job in queued_jobs:
+
             node = self._scheduler.select_node(
                 job,
                 nodes,
@@ -63,3 +78,8 @@ class SchedulerLoopService:
             self._job_repository.save(
                 job,
             )
+
+            if self._assign_worker_service is not None:
+                self._assign_worker_service.execute(
+                    job,
+                )
