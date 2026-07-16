@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.domain.entities.job import Job
 from app.domain.entities.node import Node
@@ -11,6 +11,9 @@ from app.domain.value_objects.worker_id import WorkerId
 
 def utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+HEARTBEAT_TIMEOUT = timedelta(minutes=1)
 
 
 @dataclass(slots=True)
@@ -38,6 +41,17 @@ class Worker:
         Record that this worker is alive.
         """
         self.last_seen_at = utc_now()
+
+    def is_alive(
+        self,
+    ) -> bool:
+        """
+        Return True if the worker has reported
+        a heartbeat within the configured timeout.
+        """
+        return (
+            utc_now() - self.last_seen_at
+        ) <= HEARTBEAT_TIMEOUT
 
     def ready(
         self,
@@ -129,3 +143,12 @@ class Worker:
         new work.
         """
         self.status = WorkerStatus.DRAINING
+
+    def offline(
+        self,
+    ) -> None:
+        """
+        Transition the worker into the
+        OFFLINE state.
+        """
+        self.status = WorkerStatus.OFFLINE
