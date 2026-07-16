@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from app.application.services.acquire_lease_service import (
+    AcquireLeaseService,
+)
 from app.domain.entities.job import Job
 from app.domain.entities.worker import Worker
 from app.domain.exceptions.no_available_node_error import (
@@ -25,8 +28,10 @@ class AssignWorkerService:
     def __init__(
         self,
         worker_repository: WorkerRepository,
+        acquire_lease_service: AcquireLeaseService | None = None,
     ) -> None:
         self._worker_repository = worker_repository
+        self._acquire_lease_service = acquire_lease_service
 
     def execute(
         self,
@@ -49,6 +54,13 @@ class AssignWorkerService:
                 continue
 
             worker.accept(job)
+
+            if self._acquire_lease_service is not None:
+                self._acquire_lease_service.execute(
+                    worker,
+                    job,
+                )
+
             worker.start()
 
             self._worker_repository.save(
