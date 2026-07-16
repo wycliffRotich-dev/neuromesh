@@ -13,18 +13,8 @@ class LeaseId:
     value: UUID
 
     @classmethod
-    def new(cls) -> "LeaseId":
+    def new(cls) -> LeaseId:
         return cls(uuid4())
 
     def __str__(self) -> str:
         return str(self.value)
-
-    def __init__(
-        self,
-        value: str | UUID,
-    ) -> None:
-        object.__setattr__(
-            self,
-            "value",
-            UUID(str(value)),
-        )

@@ -7,7 +7,6 @@ from app.domain.entities.lease import Lease
 from app.domain.entities.node import Node
 from app.domain.entities.worker import Worker
 from app.domain.value_objects.job_id import JobId
-from app.domain.value_objects.lease_id import LeaseId
 from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
