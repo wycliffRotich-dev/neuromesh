@@ -39,7 +39,7 @@ class Lease:
         worker_id: WorkerId,
         job_id: JobId,
         duration: timedelta = DEFAULT_LEASE_DURATION,
-    ) -> "Lease":
+    ) -> Lease:
         """
         Create a new worker lease.
         """
