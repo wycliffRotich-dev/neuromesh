@@ -11,11 +11,7 @@ from app.domain.value_objects.worker_id import WorkerId
 
 class ReleaseLeaseService:
     """
-    Release the lease owned by a worker.
-
-    Once a job has completed successfully, the worker
-    relinquishes ownership of the job and becomes
-    available to accept new work.
+    Release the active lease owned by a worker.
     """
 
     def __init__(
@@ -30,9 +26,6 @@ class ReleaseLeaseService:
         self,
         worker_id: WorkerId,
     ) -> None:
-        """
-        Release the worker's active lease.
-        """
         lease = self._lease_repository.get_by_worker_id(
             worker_id,
         )
