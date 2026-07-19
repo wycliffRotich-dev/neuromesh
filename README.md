@@ -1,7 +1,7 @@
 # NeuroMesh
 ### A distributed AI workload scheduler built to demonstrate clean architecture, domain-driven design, and real infrastructural decoupling.
 
-[![Tests](https://img.shields.io/badge/tests-111%2B%20passed-brightgreen)](#test-coverage)
+[![Tests](https://img.shields.io/badge/tests-120%2B%20passed-brightgreen)](#test-coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#tech-stack)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](#tech-stack)
@@ -65,7 +65,7 @@ Every non-obvious decision, why domain owns scheduling instead of application, w
 
 ## Test Coverage
 
-111+ tests across domain, application, infrastructure, and API layers:
+120+ tests across domain, application, infrastructure, and API layers:
 - Full domain logic coverage; job lifecycle, retry policy, constraint matching, node liveness
 - Contract tests proving SQLite and Postgres repositories behave identically
 - Application service tests for every use case
