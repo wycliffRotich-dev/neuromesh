@@ -70,6 +70,14 @@ class Worker:
         """
         return self.status is WorkerStatus.IDLE
 
+    def is_offline(
+        self,
+    ) -> bool:
+        """
+        Return True when the worker is offline.
+        """
+        return self.status is WorkerStatus.OFFLINE
+
     def accept(
         self,
         job: Job,
