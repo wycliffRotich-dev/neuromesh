@@ -4,6 +4,7 @@ from app.application.services.schedule_job_service import (
 from app.domain.entities.job import Job
 from app.domain.entities.node import Node
 from app.domain.enums.job_status import JobStatus
+from app.domain.services.job_lifecycle import JobLifecycle
 from app.domain.services.scheduler import Scheduler
 from app.domain.value_objects.job_id import JobId
 from app.domain.value_objects.node_id import NodeId
@@ -40,17 +41,27 @@ def test_schedule_job_service_schedules_a_job() -> None:
     )
 
     job_repository = InMemoryJobRepository()
-    job_repository.save(job)
 
-    node_repository = InMemoryNodeRepository([node])
+    job_repository.save(
+        job,
+    )
+
+    node_repository = InMemoryNodeRepository(
+        [
+            node,
+        ],
+    )
 
     service = ScheduleJobService(
         job_repository=job_repository,
         node_repository=node_repository,
         scheduler=Scheduler(),
+        lifecycle=JobLifecycle(),
     )
 
-    selected = service.execute(job.id)
+    selected = service.execute(
+        job.id,
+    )
 
     assert selected == node
     assert job.assigned_node_id == node.id
