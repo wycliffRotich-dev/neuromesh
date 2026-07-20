@@ -49,6 +49,7 @@ class Job:
         JobStatus.SCHEDULED: {
             JobStatus.RUNNING,
             JobStatus.CANCELLED,
+            JobStatus.QUEUED,
         },
         JobStatus.RUNNING: {
             JobStatus.COMPLETED,
@@ -61,31 +62,30 @@ class Job:
         JobStatus.CANCELLED: set(),
     }
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+    ) -> None:
         """
         Validate that this job requests a meaningful
         amount of work.
-
-        A job requesting zero CPU or zero memory cannot
-        actually be scheduled or executed, so this is
-        rejected here at job-creation time rather than
-        inside ResourceRequirements itself -- that value
-        object also represents remaining node capacity,
-        where zero is a valid state (a fully-allocated
-        node). VRAM is exempt since CPU-only jobs are
-        legitimate.
         """
         if self.resources.cpu_cores <= 0:
-            raise ValueError("Job must request at least one CPU core.")
+            raise ValueError(
+                "Job must request at least one CPU core."
+            )
 
         if self.resources.memory_mib <= 0:
-            raise ValueError("Job must request a positive amount of memory.")
+            raise ValueError(
+                "Job must request a positive amount of memory."
+            )
 
     def _transition_to(
         self,
         new_status: JobStatus,
     ) -> None:
-        allowed = self._ALLOWED_TRANSITIONS[self.status]
+        allowed = self._ALLOWED_TRANSITIONS[
+            self.status
+        ]
 
         if new_status not in allowed:
             raise InvalidJobTransition(
@@ -94,7 +94,52 @@ class Job:
 
         self.status = new_status
 
-    def queue(self) -> None:
+    #
+    # Queries
+    #
+
+    def is_submitted(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.SUBMITTED
+
+    def is_queued(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.QUEUED
+
+    def is_scheduled(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.SCHEDULED
+
+    def is_running(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.RUNNING
+
+    def is_completed(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.COMPLETED
+
+    def is_failed(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.FAILED
+
+    def is_cancelled(
+        self,
+    ) -> bool:
+        return self.status is JobStatus.CANCELLED
+
+    #
+    # Commands
+    #
+
+    def queue(
+        self,
+    ) -> None:
         self._transition_to(
             JobStatus.QUEUED,
         )
@@ -104,55 +149,92 @@ class Job:
         node_id: NodeId,
     ) -> None:
         self.assigned_node_id = node_id
+
         self._transition_to(
             JobStatus.SCHEDULED,
         )
 
-    def start(self) -> None:
+    def unschedule(
+        self,
+    ) -> None:
+        """
+        Return a scheduled job to the queue.
+        """
+        if not self.is_scheduled():
+            raise InvalidJobTransition(
+                "Only scheduled jobs may be unscheduled."
+            )
+
+        self.assigned_node_id = None
+
+        self._transition_to(
+            JobStatus.QUEUED,
+        )
+
+    def start(
+        self,
+    ) -> None:
         self._transition_to(
             JobStatus.RUNNING,
         )
 
-    def complete(self) -> None:
+    def complete(
+        self,
+    ) -> None:
         self._transition_to(
             JobStatus.COMPLETED,
         )
 
-    def fail(self) -> None:
+    def fail(
+        self,
+    ) -> None:
         self._transition_to(
             JobStatus.FAILED,
         )
 
-    def cancel(self) -> None:
+    def cancel(
+        self,
+    ) -> None:
         self._transition_to(
             JobStatus.CANCELLED,
         )
 
-    def can_retry(self) -> bool:
+    def can_retry(
+        self,
+    ) -> bool:
         """
         Return True if the job has retries remaining.
         """
         return self.retry_count < self.max_retries
 
-    def record_retry(self) -> None:
+    def record_retry(
+        self,
+    ) -> None:
         """
         Consume one retry attempt.
         """
         if not self.can_retry():
-            raise ValueError("Job has exhausted all retries.")
+            raise ValueError(
+                "Job has exhausted all retries."
+            )
 
         self.retry_count += 1
 
-    def retry(self) -> None:
+    def retry(
+        self,
+    ) -> None:
         """
-        Retry a failed job by consuming one retry
-        attempt and placing it back into the queue.
+        Retry a failed job.
         """
-        if self.status != JobStatus.FAILED:
-            raise InvalidJobTransition("Only failed jobs may be retried.")
+        if not self.is_failed():
+            raise InvalidJobTransition(
+                "Only failed jobs may be retried."
+            )
 
         self.record_retry()
+
         self.assigned_node_id = None
+
         self._transition_to(
             JobStatus.QUEUED,
         )

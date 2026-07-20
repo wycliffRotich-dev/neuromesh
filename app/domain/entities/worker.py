@@ -61,6 +61,18 @@ class Worker:
         """
         self.status = WorkerStatus.IDLE
 
+    def recover(
+        self,
+    ) -> None:
+        """
+        Recover this worker after abandoned work.
+
+        Any running job is forgotten because the
+        scheduler will decide what to do with it.
+        """
+        self.running_job = None
+        self.status = WorkerStatus.IDLE
+
     def is_idle(
         self,
     ) -> bool:
