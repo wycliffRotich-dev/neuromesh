@@ -16,6 +16,9 @@ from app.domain.entities.worker import Worker
 from app.domain.enums.job_status import (
     JobStatus,
 )
+from app.domain.services.job_lifecycle import (
+    JobLifecycle,
+)
 from app.domain.services.scheduler import (
     Scheduler,
 )
@@ -95,6 +98,7 @@ def test_execute_dispatches_job() -> None:
         job_repository=job_repository,
         node_repository=node_repository,
         scheduler=scheduler,
+        lifecycle=JobLifecycle(),
     )
 
     assign_worker_service = AssignWorkerService(
