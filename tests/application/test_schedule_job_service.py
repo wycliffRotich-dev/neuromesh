@@ -1,3 +1,6 @@
+from app.application.services.record_job_events_service import (
+    RecordJobEventsService,
+)
 from app.application.services.schedule_job_service import (
     ScheduleJobService,
 )
@@ -10,6 +13,9 @@ from app.domain.value_objects.job_id import JobId
 from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
+)
+from app.infrastructure.repositories.in_memory_event_repository import (
+    InMemoryEventRepository,
 )
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
@@ -52,11 +58,18 @@ def test_schedule_job_service_schedules_a_job() -> None:
         ],
     )
 
+    event_repository = InMemoryEventRepository()
+
+    record_job_events_service = RecordJobEventsService(
+        event_repository=event_repository,
+    )
+
     service = ScheduleJobService(
         job_repository=job_repository,
         node_repository=node_repository,
         scheduler=Scheduler(),
         lifecycle=JobLifecycle(),
+        record_job_events_service=record_job_events_service,
     )
 
     selected = service.execute(
@@ -66,3 +79,10 @@ def test_schedule_job_service_schedules_a_job() -> None:
     assert selected == node
     assert job.assigned_node_id == node.id
     assert job.status == JobStatus.SCHEDULED
+
+    events = event_repository.list_by_aggregate(
+        str(job.id),
+    )
+
+    assert len(events) == 1
+    assert events[0].event_type == "JobScheduled"

@@ -11,6 +11,9 @@ from app.application.services.create_node_service import (
 from app.application.services.create_worker_service import (
     CreateWorkerService,
 )
+from app.application.services.get_job_history_service import (
+    GetJobHistoryService,
+)
 from app.application.services.get_job_service import (
     GetJobService,
 )
@@ -23,6 +26,9 @@ from app.application.services.list_nodes_service import (
 from app.application.services.scheduler_service import (
     SchedulerService,
 )
+from app.domain.repositories.event_repository import (
+    EventRepository,
+)
 from app.domain.repositories.job_repository import (
     JobRepository,
 )
@@ -31,6 +37,9 @@ from app.domain.repositories.node_repository import (
 )
 from app.domain.repositories.worker_repository import (
     WorkerRepository,
+)
+from app.infrastructure.repositories.in_memory_event_repository import (
+    InMemoryEventRepository,
 )
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
@@ -97,6 +106,9 @@ _job_repository, _node_repository, _worker_repository = (
     _build_repositories()
 )
 
+_event_repository: EventRepository = (
+    InMemoryEventRepository()
+)
 
 _scheduler_service = SchedulerService(
     node_repository=_node_repository,
@@ -122,6 +134,16 @@ def get_get_job_service() -> GetJobService:
 
     return GetJobService(
         job_repository=_job_repository,
+    )
+
+
+def get_get_job_history_service() -> GetJobHistoryService:
+    """
+    Return GetJobHistoryService.
+    """
+
+    return GetJobHistoryService(
+        event_repository=_event_repository,
     )
 
 
