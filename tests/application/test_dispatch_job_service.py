@@ -7,6 +7,9 @@ from app.application.services.assign_worker_service import (
 from app.application.services.dispatch_job_service import (
     DispatchJobService,
 )
+from app.application.services.record_job_events_service import (
+    RecordJobEventsService,
+)
 from app.application.services.schedule_job_service import (
     ScheduleJobService,
 )
@@ -28,6 +31,9 @@ from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
 )
 from app.domain.value_objects.worker_id import WorkerId
+from app.infrastructure.repositories.in_memory_event_repository import (
+    InMemoryEventRepository,
+)
 from app.infrastructure.repositories.in_memory_job_repository import (
     InMemoryJobRepository,
 )
@@ -87,6 +93,7 @@ def test_execute_dispatches_job() -> None:
     )
 
     lease_repository = InMemoryLeaseRepository()
+    event_repository = InMemoryEventRepository()
 
     scheduler = Scheduler()
 
@@ -94,11 +101,16 @@ def test_execute_dispatches_job() -> None:
         lease_repository=lease_repository,
     )
 
+    record_job_events_service = RecordJobEventsService(
+        event_repository=event_repository,
+    )
+
     schedule_job_service = ScheduleJobService(
         job_repository=job_repository,
         node_repository=node_repository,
         scheduler=scheduler,
         lifecycle=JobLifecycle(),
+        record_job_events_service=record_job_events_service,
     )
 
     assign_worker_service = AssignWorkerService(
@@ -135,3 +147,10 @@ def test_execute_dispatches_job() -> None:
     )
 
     assert lease is not None
+
+    events = event_repository.list_by_aggregate(
+        str(job.id),
+    )
+
+    assert len(events) == 1
+    assert events[0].event_type == "JobScheduled"

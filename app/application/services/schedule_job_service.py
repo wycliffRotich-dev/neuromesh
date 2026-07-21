@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from app.application.services.record_job_events_service import (
+    RecordJobEventsService,
+)
 from app.domain.entities.node import Node
 from app.domain.repositories.job_repository import JobRepository
 from app.domain.repositories.node_repository import NodeRepository
@@ -20,11 +23,13 @@ class ScheduleJobService:
         node_repository: NodeRepository,
         scheduler: Scheduler,
         lifecycle: JobLifecycle,
+        record_job_events_service: RecordJobEventsService,
     ) -> None:
         self._job_repository = job_repository
         self._node_repository = node_repository
         self._scheduler = scheduler
         self._lifecycle = lifecycle
+        self._record_job_events_service = record_job_events_service
 
     def execute(
         self,
@@ -32,10 +37,6 @@ class ScheduleJobService:
     ) -> Node | None:
         """
         Schedule a job onto a compute node.
-
-        Returns:
-            The selected node if scheduling succeeds,
-            otherwise None.
         """
         job = self._job_repository.get_by_id(
             job_id,
@@ -65,6 +66,12 @@ class ScheduleJobService:
         self._lifecycle.schedule(
             job,
             node.id,
+        )
+
+        self._record_job_events_service.record(
+            aggregate_id=str(job.id),
+            aggregate_type="Job",
+            event_type="JobScheduled",
         )
 
         self._node_repository.save(
