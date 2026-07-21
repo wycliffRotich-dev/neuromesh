@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from datetime import timedelta
+
 from app.application.reconciliation.recover_expired_lease_service import (
     RecoverExpiredLeaseService,
 )
@@ -61,6 +65,9 @@ def test_recover_expired_lease_recovers_job() -> None:
     lease = Lease.create(
         worker_id=worker.id,
         job_id=job.id,
+        duration=timedelta(
+            seconds=-1,
+        ),
     )
 
     worker_repository = InMemoryWorkerRepository(
@@ -109,4 +116,3 @@ def test_recover_expired_lease_recovers_job() -> None:
         )
         is None
     )
-
