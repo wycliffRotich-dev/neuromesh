@@ -29,5 +29,23 @@ CREATE TABLE IF NOT EXISTS jobs (
     submitted_at       TIMESTAMPTZ NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
-CREATE INDEX IF NOT EXISTS idx_nodes_draining ON nodes (draining);
+CREATE TABLE IF NOT EXISTS events (
+    id                UUID PRIMARY KEY,
+    aggregate_id      TEXT NOT NULL,
+    aggregate_type    TEXT NOT NULL,
+    event_type        TEXT NOT NULL,
+    occurred_at       TIMESTAMPTZ NOT NULL,
+    payload           JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_jobs_status
+ON jobs (status);
+
+CREATE INDEX IF NOT EXISTS idx_nodes_draining
+ON nodes (draining);
+
+CREATE INDEX IF NOT EXISTS idx_events_aggregate_id
+ON events (aggregate_id);
+
+CREATE INDEX IF NOT EXISTS idx_events_occurred_at
+ON events (occurred_at);
