@@ -23,6 +23,9 @@ from app.application.services.get_node_service import (
 from app.application.services.list_nodes_service import (
     ListNodesService,
 )
+from app.application.services.record_job_events_service import (
+    RecordJobEventsService,
+)
 from app.application.services.scheduler_service import (
     SchedulerService,
 )
@@ -53,6 +56,9 @@ from app.infrastructure.repositories.in_memory_worker_repository import (
 from app.infrastructure.repositories.sqlite_connection import (
     create_connection,
 )
+from app.infrastructure.repositories.sqlite_event_repository import (
+    SqliteEventRepository,
+)
 from app.infrastructure.repositories.sqlite_job_repository import (
     SqliteJobRepository,
 )
@@ -65,6 +71,7 @@ def _build_repositories() -> tuple[
     JobRepository,
     NodeRepository,
     WorkerRepository,
+    EventRepository,
 ]:
     """
     Choose the repository backend.
@@ -93,26 +100,34 @@ def _build_repositories() -> tuple[
                 connection,
             ),
             InMemoryWorkerRepository(),
+            SqliteEventRepository(
+                connection,
+            ),
         )
 
     return (
         InMemoryJobRepository(),
         InMemoryNodeRepository(),
         InMemoryWorkerRepository(),
+        InMemoryEventRepository(),
     )
 
 
-_job_repository, _node_repository, _worker_repository = (
-    _build_repositories()
-)
+(
+    _job_repository,
+    _node_repository,
+    _worker_repository,
+    _event_repository,
+) = _build_repositories()
 
-_event_repository: EventRepository = (
-    InMemoryEventRepository()
-)
 
 _scheduler_service = SchedulerService(
     node_repository=_node_repository,
     job_repository=_job_repository,
+)
+
+_record_job_events_service = RecordJobEventsService(
+    event_repository=_event_repository,
 )
 
 
@@ -145,6 +160,14 @@ def get_get_job_history_service() -> GetJobHistoryService:
     return GetJobHistoryService(
         event_repository=_event_repository,
     )
+
+
+def get_record_job_events_service() -> RecordJobEventsService:
+    """
+    Return RecordJobEventsService.
+    """
+
+    return _record_job_events_service
 
 
 def get_create_node_service() -> CreateNodeService:
