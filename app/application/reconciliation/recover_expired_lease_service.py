@@ -35,8 +35,14 @@ class RecoverExpiredLeaseService:
     ) -> None:
         """
         Recover every expired lease.
+
+        Leases that have not yet expired are left untouched;
+        their worker is still the legitimate owner of the job.
         """
         for lease in self._lease_repository.list():
+
+            if not lease.is_expired():
+                continue
 
             worker = self._worker_repository.get_by_id(
                 lease.worker_id,
