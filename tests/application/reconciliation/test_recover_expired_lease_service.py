@@ -26,8 +26,8 @@ from app.infrastructure.repositories.in_memory_worker_repository import (
 )
 
 
-def test_recover_expired_lease_recovers_job() -> None:
-    node = Node(
+def _make_node() -> Node:
+    return Node(
         id=NodeId.new(),
         capacity=ResourceRequirements(
             cpu_cores=8,
@@ -35,6 +35,23 @@ def test_recover_expired_lease_recovers_job() -> None:
             vram_mib=0,
         ),
     )
+
+
+def _make_expired_lease(worker: Worker, job: Job) -> Lease:
+    return Lease.create(
+        worker_id=worker.id,
+        job_id=job.id,
+        duration=timedelta(seconds=-1),
+    )
+
+
+def test_recover_expired_lease_requeues_job_with_retries_remaining() -> None:
+    """
+    A job whose lease expired mid-execution, with retry
+    budget remaining, is reclaimed back to QUEUED rather
+    than left stuck or incorrectly failed outright.
+    """
+    node = _make_node()
 
     worker = Worker(
         id=WorkerId.new(),
@@ -50,43 +67,21 @@ def test_recover_expired_lease_recovers_job() -> None:
             memory_mib=512,
             vram_mib=0,
         ),
+        max_retries=1,
     )
 
     job.queue()
+    job.assign_to(node.id)
 
-    job.assign_to(
-        node.id,
-    )
+    worker.accept(job)
+    worker.start()
 
-    worker.accept(
-        job,
-    )
+    lease = _make_expired_lease(worker, job)
 
-    lease = Lease.create(
-        worker_id=worker.id,
-        job_id=job.id,
-        duration=timedelta(
-            seconds=-1,
-        ),
-    )
-
-    worker_repository = InMemoryWorkerRepository(
-        [
-            worker,
-        ],
-    )
-
-    job_repository = InMemoryJobRepository(
-        [
-            job,
-        ],
-    )
-
+    worker_repository = InMemoryWorkerRepository([worker])
+    job_repository = InMemoryJobRepository([job])
     lease_repository = InMemoryLeaseRepository()
-
-    lease_repository.save(
-        lease,
-    )
+    lease_repository.save(lease)
 
     service = RecoverExpiredLeaseService(
         worker_repository=worker_repository,
@@ -96,23 +91,76 @@ def test_recover_expired_lease_recovers_job() -> None:
 
     service.execute()
 
-    recovered_worker = worker_repository.get_by_id(
-        worker.id,
-    )
-
-    recovered_job = job_repository.get_by_id(
-        job.id,
-    )
+    recovered_worker = worker_repository.get_by_id(worker.id)
+    recovered_job = job_repository.get_by_id(job.id)
 
     assert recovered_worker is not None
     assert recovered_worker.is_idle()
 
     assert recovered_job is not None
     assert recovered_job.is_queued()
+    assert recovered_job.retry_count == 1
 
     assert (
-        lease_repository.get_by_worker_id(
-            worker.id,
-        )
-        is None
+        lease_repository.get_by_worker_id(worker.id) is None
+    )
+
+
+def test_recover_expired_lease_fails_job_once_retries_exhausted() -> None:
+    """
+    A job with no retry budget remaining is failed outright
+    when its lease expires, rather than being requeued
+    forever onto a fleet that may keep abandoning it.
+    """
+    node = _make_node()
+
+    worker = Worker(
+        id=WorkerId.new(),
+        node=node,
+    )
+
+    worker.ready()
+
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=1,
+            memory_mib=512,
+            vram_mib=0,
+        ),
+        max_retries=0,
+    )
+
+    job.queue()
+    job.assign_to(node.id)
+
+    worker.accept(job)
+    worker.start()
+
+    lease = _make_expired_lease(worker, job)
+
+    worker_repository = InMemoryWorkerRepository([worker])
+    job_repository = InMemoryJobRepository([job])
+    lease_repository = InMemoryLeaseRepository()
+    lease_repository.save(lease)
+
+    service = RecoverExpiredLeaseService(
+        worker_repository=worker_repository,
+        job_repository=job_repository,
+        lease_repository=lease_repository,
+    )
+
+    service.execute()
+
+    recovered_worker = worker_repository.get_by_id(worker.id)
+    recovered_job = job_repository.get_by_id(job.id)
+
+    assert recovered_worker is not None
+    assert recovered_worker.is_idle()
+
+    assert recovered_job is not None
+    assert recovered_job.is_failed()
+
+    assert (
+        lease_repository.get_by_worker_id(worker.id) is None
     )

@@ -16,9 +16,10 @@ class RecoverOfflineNodeService:
     Recover work abandoned by offline nodes.
 
     Nodes are considered offline when they stop
-    sending heartbeats. Any scheduled work assigned
-    to workers on those nodes is returned to the
-    scheduling queue.
+    sending heartbeats. Any scheduled or running work
+    assigned to workers on those nodes is reclaimed,
+    consuming a retry attempt, rather than simply
+    returned to the queue as-is.
     """
 
     def __init__(
@@ -62,7 +63,7 @@ class RecoverOfflineNodeService:
             if job is None:
                 continue
 
-            job.unschedule()
+            job.reclaim()
 
             self._job_repository.save(
                 job,

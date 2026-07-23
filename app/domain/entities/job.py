@@ -70,10 +70,12 @@ class Job:
             JobStatus.RUNNING,
             JobStatus.CANCELLED,
             JobStatus.QUEUED,
+            JobStatus.FAILED,
         },
         JobStatus.RUNNING: {
             JobStatus.COMPLETED,
             JobStatus.FAILED,
+            JobStatus.QUEUED,
         },
         JobStatus.COMPLETED: set(),
         JobStatus.FAILED: {
@@ -270,6 +272,54 @@ class Job:
             raise InvalidJobTransition(
                 "Only failed jobs may be retried."
             )
+
+        self.record_retry()
+
+        self.assigned_node_id = None
+
+        self.started_at = None
+        self.completed_at = None
+
+        self._transition_to(
+            JobStatus.QUEUED,
+        )
+
+    def reclaim(
+        self,
+    ) -> None:
+        """
+        Reclaim a job abandoned due to infrastructure failure
+        (a dead worker, an offline node, or an expired lease),
+        as opposed to a job that failed on its own merits.
+
+        This is only legal while the job is SCHEDULED or
+        RUNNING, since those are the only states in which a
+        worker could plausibly still be holding it.
+
+        Reclaiming consumes a retry attempt, using the same
+        accounting as retry(). This is deliberate: without it,
+        a single unhealthy node could cause a job to be
+        endlessly reassigned and re-abandoned, consuming
+        scheduling cycles and node capacity indefinitely
+        without ever reaching a terminal state. Once retries
+        are exhausted, the job fails instead of requeuing
+        again.
+        """
+        if not (
+            self.is_scheduled() or self.is_running()
+        ):
+            raise InvalidJobTransition(
+                "Only scheduled or running jobs may be reclaimed."
+            )
+
+        if not self.can_retry():
+            self.assigned_node_id = None
+            self.completed_at = utc_now()
+
+            self._transition_to(
+                JobStatus.FAILED,
+            )
+            return
 
         self.record_retry()
 

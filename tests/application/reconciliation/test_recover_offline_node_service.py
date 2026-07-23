@@ -23,7 +23,7 @@ from app.infrastructure.repositories.in_memory_worker_repository import (
 )
 
 
-def test_recover_offline_node_returns_jobs_to_queue() -> None:
+def _make_offline_node() -> Node:
     node = Node(
         id=NodeId.new(),
         capacity=ResourceRequirements(
@@ -32,6 +32,16 @@ def test_recover_offline_node_returns_jobs_to_queue() -> None:
             vram_mib=0,
         ),
     )
+    node.last_seen_at = datetime.now(UTC) - timedelta(minutes=2)
+    return node
+
+
+def test_recover_offline_node_requeues_job_with_retries_remaining() -> None:
+    """
+    A job assigned to a worker on an offline node, with
+    retry budget remaining, is reclaimed back to QUEUED.
+    """
+    node = _make_offline_node()
 
     worker = Worker(
         id=WorkerId.new(),
@@ -47,39 +57,18 @@ def test_recover_offline_node_returns_jobs_to_queue() -> None:
             memory_mib=512,
             vram_mib=0,
         ),
+        max_retries=1,
     )
 
     job.queue()
+    job.assign_to(node.id)
 
-    job.assign_to(
-        node.id,
-    )
+    worker.accept(job)
+    worker.start()
 
-    worker.accept(
-        job,
-    )
-
-    node.last_seen_at = (
-        datetime.now(UTC) - timedelta(minutes=2)
-    )
-
-    node_repository = InMemoryNodeRepository(
-        [
-            node,
-        ],
-    )
-
-    worker_repository = InMemoryWorkerRepository(
-        [
-            worker,
-        ],
-    )
-
-    job_repository = InMemoryJobRepository(
-        [
-            job,
-        ],
-    )
+    node_repository = InMemoryNodeRepository([node])
+    worker_repository = InMemoryWorkerRepository([worker])
+    job_repository = InMemoryJobRepository([job])
 
     service = RecoverOfflineNodeService(
         node_repository=node_repository,
@@ -89,16 +78,66 @@ def test_recover_offline_node_returns_jobs_to_queue() -> None:
 
     service.execute()
 
-    recovered_worker = worker_repository.get_by_id(
-        worker.id,
-    )
-
-    recovered_job = job_repository.get_by_id(
-        job.id,
-    )
+    recovered_worker = worker_repository.get_by_id(worker.id)
+    recovered_job = job_repository.get_by_id(job.id)
 
     assert recovered_worker is not None
     assert recovered_worker.is_idle()
 
     assert recovered_job is not None
     assert recovered_job.is_queued()
+    assert recovered_job.retry_count == 1
+
+
+def test_recover_offline_node_fails_job_once_retries_exhausted() -> None:
+    """
+    A job with no retry budget remaining is failed outright
+    when its node goes offline, rather than requeued onto a
+    fleet that may reassign it right back to the same
+    unhealthy node.
+    """
+    node = _make_offline_node()
+
+    worker = Worker(
+        id=WorkerId.new(),
+        node=node,
+    )
+
+    worker.ready()
+
+    job = Job(
+        id=JobId.new(),
+        resources=ResourceRequirements(
+            cpu_cores=1,
+            memory_mib=512,
+            vram_mib=0,
+        ),
+        max_retries=0,
+    )
+
+    job.queue()
+    job.assign_to(node.id)
+
+    worker.accept(job)
+    worker.start()
+
+    node_repository = InMemoryNodeRepository([node])
+    worker_repository = InMemoryWorkerRepository([worker])
+    job_repository = InMemoryJobRepository([job])
+
+    service = RecoverOfflineNodeService(
+        node_repository=node_repository,
+        worker_repository=worker_repository,
+        job_repository=job_repository,
+    )
+
+    service.execute()
+
+    recovered_worker = worker_repository.get_by_id(worker.id)
+    recovered_job = job_repository.get_by_id(job.id)
+
+    assert recovered_worker is not None
+    assert recovered_worker.is_idle()
+
+    assert recovered_job is not None
+    assert recovered_job.is_failed()
