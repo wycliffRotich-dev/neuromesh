@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import pytest
+
 from app.application.services.release_lease_service import (
     ReleaseLeaseService,
 )
@@ -19,7 +23,7 @@ from app.infrastructure.repositories.in_memory_worker_repository import (
 )
 
 
-def test_execute_releases_worker_lease() -> None:
+def _make_worker_with_running_job() -> tuple[Worker, Job]:
     node = Node(
         id=NodeId.new(),
         capacity=ResourceRequirements(
@@ -46,16 +50,24 @@ def test_execute_releases_worker_lease() -> None:
     )
 
     job.queue()
+    job.assign_to(node.id)
 
-    job.assign_to(
-        node.id,
-    )
-
-    worker.accept(
-        job,
-    )
-
+    worker.accept(job)
     worker.start()
+
+    return worker, job
+
+
+def test_execute_deletes_the_lease() -> None:
+    """
+    ReleaseLeaseService is responsible for exactly one
+    thing: removing the lease record. It must not decide,
+    or even touch, the worker's or job's status -- that
+    decision belongs to whichever caller actually knows the
+    job's outcome (WorkerExecutionLoop), and must happen
+    before this service is invoked.
+    """
+    worker, job = _make_worker_with_running_job()
 
     lease = Lease.create(
         worker_id=worker.id,
@@ -63,37 +75,92 @@ def test_execute_releases_worker_lease() -> None:
     )
 
     lease_repository = InMemoryLeaseRepository()
+    lease_repository.save(lease)
 
-    lease_repository.save(
-        lease,
-    )
-
-    worker_repository = InMemoryWorkerRepository(
-        [
-            worker,
-        ],
-    )
+    worker_repository = InMemoryWorkerRepository([worker])
 
     service = ReleaseLeaseService(
         lease_repository=lease_repository,
         worker_repository=worker_repository,
     )
 
-    service.execute(
-        worker.id,
+    service.execute(worker.id)
+
+    assert lease_repository.get_by_worker_id(worker.id) is None
+    assert lease_repository.get_by_job_id(job.id) is None
+
+
+def test_execute_does_not_change_worker_state() -> None:
+    """
+    Guards against ReleaseLeaseService silently regaining
+    responsibility for worker/job transitions. Whatever
+    state the worker was in before release, it must be in
+    that exact same state afterward.
+    """
+    worker, job = _make_worker_with_running_job()
+
+    lease = Lease.create(
+        worker_id=worker.id,
+        job_id=job.id,
     )
 
-    assert (
-        lease_repository.get_by_worker_id(
-            worker.id,
-        )
-        is None
+    lease_repository = InMemoryLeaseRepository()
+    lease_repository.save(lease)
+
+    worker_repository = InMemoryWorkerRepository([worker])
+
+    service = ReleaseLeaseService(
+        lease_repository=lease_repository,
+        worker_repository=worker_repository,
     )
 
-    stored_worker = worker_repository.get_by_id(
-        worker.id,
-    )
+    service.execute(worker.id)
+
+    stored_worker = worker_repository.get_by_id(worker.id)
 
     assert stored_worker is not None
-    assert stored_worker.is_idle()
-    assert stored_worker.running_job is None
+    assert stored_worker.status == worker.status
+    assert stored_worker.running_job is job
+
+
+def test_execute_raises_when_worker_has_no_active_lease() -> None:
+    worker, _job = _make_worker_with_running_job()
+
+    lease_repository = InMemoryLeaseRepository()
+    worker_repository = InMemoryWorkerRepository([worker])
+
+    service = ReleaseLeaseService(
+        lease_repository=lease_repository,
+        worker_repository=worker_repository,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="does not own an active lease",
+    ):
+        service.execute(worker.id)
+
+
+def test_execute_raises_when_worker_does_not_exist() -> None:
+    worker, job = _make_worker_with_running_job()
+
+    lease = Lease.create(
+        worker_id=worker.id,
+        job_id=job.id,
+    )
+
+    lease_repository = InMemoryLeaseRepository()
+    lease_repository.save(lease)
+
+    worker_repository = InMemoryWorkerRepository()
+
+    service = ReleaseLeaseService(
+        lease_repository=lease_repository,
+        worker_repository=worker_repository,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Worker does not exist",
+    ):
+        service.execute(worker.id)

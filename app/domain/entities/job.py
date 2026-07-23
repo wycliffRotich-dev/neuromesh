@@ -58,6 +58,29 @@ class Job:
 
     completed_at: datetime | None = None
 
+    command: list[str] | None = None
+    """
+    The argv-style command this job executes, e.g.
+    ["python", "train.py", "--epochs", "5"].
+
+    Deliberately a list, never a raw shell string, so a
+    worker never needs shell=True and this can never be
+    used for shell injection.
+
+    None by default: jobs created through the public API
+    (CreateJobService) do not currently set this. Real
+    subprocess execution exists and is fully exercised at
+    the service layer, but is not yet wired to accept
+    arbitrary caller-supplied commands over an
+    unauthenticated HTTP endpoint. See ADR 0012.
+    """
+
+    exit_code: int | None = None
+    """
+    The process exit code from the most recent execution
+    attempt. None until the job has actually run once.
+    """
+
     _ALLOWED_TRANSITIONS = {
         JobStatus.SUBMITTED: {
             JobStatus.QUEUED,
@@ -218,8 +241,10 @@ class Job:
 
     def complete(
         self,
+        exit_code: int | None = None,
     ) -> None:
         self.completed_at = utc_now()
+        self.exit_code = exit_code
 
         self._transition_to(
             JobStatus.COMPLETED,
@@ -227,8 +252,10 @@ class Job:
 
     def fail(
         self,
+        exit_code: int | None = None,
     ) -> None:
         self.completed_at = utc_now()
+        self.exit_code = exit_code
 
         self._transition_to(
             JobStatus.FAILED,
@@ -279,6 +306,7 @@ class Job:
 
         self.started_at = None
         self.completed_at = None
+        self.exit_code = None
 
         self._transition_to(
             JobStatus.QUEUED,
@@ -327,6 +355,7 @@ class Job:
 
         self.started_at = None
         self.completed_at = None
+        self.exit_code = None
 
         self._transition_to(
             JobStatus.QUEUED,

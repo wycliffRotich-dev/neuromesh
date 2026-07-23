@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS jobs (
     retry_count        INTEGER NOT NULL DEFAULT 0,
     status             TEXT NOT NULL,
     assigned_node_id   UUID REFERENCES nodes(id) ON DELETE SET NULL,
-    submitted_at       TIMESTAMPTZ NOT NULL
+    submitted_at       TIMESTAMPTZ NOT NULL,
+    command            JSONB,
+    exit_code          INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS workers (

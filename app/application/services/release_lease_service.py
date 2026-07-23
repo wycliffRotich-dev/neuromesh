@@ -12,6 +12,14 @@ from app.domain.value_objects.worker_id import WorkerId
 class ReleaseLeaseService:
     """
     Release the active lease owned by a worker.
+
+    This service is purely about lease bookkeeping. It does
+    not decide whether the job the lease was protecting
+    succeeded or failed -- that decision is made by whoever
+    actually ran the job (WorkerExecutionLoop), before the
+    lease is released. A lease must always be released once
+    a worker is done with a job, regardless of that job's
+    outcome.
     """
 
     def __init__(
@@ -43,12 +51,6 @@ class ReleaseLeaseService:
             raise ValueError(
                 "Worker does not exist."
             )
-
-        worker.complete()
-
-        self._worker_repository.save(
-            worker,
-        )
 
         self._lease_repository.delete(
             lease.job_id,

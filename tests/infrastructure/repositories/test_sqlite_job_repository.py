@@ -155,3 +155,65 @@ def test_save_twice_updates_existing_job_instead_of_duplicating(
 
     assert len(matching) == 1
     assert matching[0].status == JobStatus.QUEUED
+
+
+def test_round_trips_command_and_exit_code(db_path) -> None:
+    """
+    A job with a real command and a recorded exit code must
+    survive a save/load cycle across independent
+    connections intact -- these two fields did not exist
+    before real subprocess execution was added, and nothing
+    previously exercised them at all.
+    """
+    job = _make_job()
+    job.command = ["python3", "-c", "print('hi')"]
+
+    write_connection = create_connection(db_path)
+    write_repository = SqliteJobRepository(write_connection)
+    write_repository.save(job)
+    write_connection.close()
+
+    read_connection = create_connection(db_path)
+    read_repository = SqliteJobRepository(read_connection)
+    reloaded = read_repository.get_by_id(job.id)
+    read_connection.close()
+
+    assert reloaded is not None
+    assert reloaded.command == ["python3", "-c", "print('hi')"]
+    assert reloaded.exit_code is None
+
+    job.queue()
+    job.assign_to(NodeId.new())
+    job.exit_code = 0
+
+    write_connection = create_connection(db_path)
+    write_repository = SqliteJobRepository(write_connection)
+    write_repository.save(job)
+    write_connection.close()
+
+    read_connection = create_connection(db_path)
+    read_repository = SqliteJobRepository(read_connection)
+    reloaded_after_update = read_repository.get_by_id(job.id)
+    read_connection.close()
+
+    assert reloaded_after_update is not None
+    assert reloaded_after_update.exit_code == 0
+
+
+def test_round_trips_job_with_no_command(db_path) -> None:
+    """
+    A job with no command (the current default for every
+    job created through the public API) must round-trip as
+    None, not as the string "null" or an empty list.
+    """
+    job = _make_job()
+    assert job.command is None
+
+    connection = create_connection(db_path)
+    repository = SqliteJobRepository(connection)
+    repository.save(job)
+
+    reloaded = repository.get_by_id(job.id)
+
+    assert reloaded is not None
+    assert reloaded.command is None

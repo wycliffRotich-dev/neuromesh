@@ -162,3 +162,44 @@ def test_save_twice_updates_existing_job_instead_of_duplicating(
 
     assert len(matching) == 1
     assert matching[0].status == JobStatus.QUEUED
+
+
+def test_round_trips_command_and_exit_code(repository) -> None:
+    """
+    A job with a real command and a recorded exit code must
+    survive a save/load cycle -- these two fields did not
+    exist before real subprocess execution was added, and
+    nothing previously exercised them against PostgreSQL.
+    """
+    job = _make_job()
+    job.command = ["python3", "-c", "print('hi')"]
+
+    repository.save(job)
+    reloaded = repository.get_by_id(job.id)
+
+    assert reloaded is not None
+    assert reloaded.command == ["python3", "-c", "print('hi')"]
+    assert reloaded.exit_code is None
+
+    job.exit_code = 0
+    repository.save(job)
+    reloaded_after_update = repository.get_by_id(job.id)
+
+    assert reloaded_after_update is not None
+    assert reloaded_after_update.exit_code == 0
+
+
+def test_round_trips_job_with_no_command(repository) -> None:
+    """
+    A job with no command (the current default for every
+    job created through the public API) must round-trip as
+    None, not as a JSON "null" string or an empty list.
+    """
+    job = _make_job()
+    assert job.command is None
+
+    repository.save(job)
+    reloaded = repository.get_by_id(job.id)
+
+    assert reloaded is not None
+    assert reloaded.command is None
