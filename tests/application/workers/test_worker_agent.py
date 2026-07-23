@@ -2,10 +2,12 @@ from app.domain.entities.job import Job
 from app.domain.entities.node import Node
 from app.domain.entities.worker import Worker
 from app.domain.enums.job_status import JobStatus
+from app.domain.value_objects.job_id import JobId
 from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
 )
+from app.domain.value_objects.worker_id import WorkerId
 
 
 def test_worker_can_run_job() -> None:
@@ -15,7 +17,7 @@ def test_worker_can_run_job() -> None:
     """
 
     node = Node(
-        id=NodeId("node-1"),
+        id=NodeId.new(),
         capacity=ResourceRequirements(
             cpu_cores=8,
             memory_mib=16_000,
@@ -24,7 +26,7 @@ def test_worker_can_run_job() -> None:
     )
 
     job = Job(
-        id="job-1",
+        id=JobId.new(),
         resources=ResourceRequirements(
             cpu_cores=2,
             memory_mib=2_000,
@@ -36,7 +38,7 @@ def test_worker_can_run_job() -> None:
     job.assign_to(node.id)
 
     worker = Worker(
-        id="worker-1",
+        id=WorkerId.new(),
         node=node,
     )
 

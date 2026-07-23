@@ -24,6 +24,7 @@ def pool():
         TEST_DATABASE_URL,
         min_size=1,
         max_size=5,
+        open=True,
         kwargs={"autocommit": True},
     )
     yield test_pool

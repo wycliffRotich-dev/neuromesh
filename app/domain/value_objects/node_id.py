@@ -12,6 +12,16 @@ class NodeId:
 
     value: UUID
 
+    def __init__(
+        self,
+        value: str | UUID,
+    ) -> None:
+        object.__setattr__(
+            self,
+            "value",
+            UUID(str(value)),
+        )
+
     @classmethod
     def new(cls) -> NodeId:
         return cls(uuid4())

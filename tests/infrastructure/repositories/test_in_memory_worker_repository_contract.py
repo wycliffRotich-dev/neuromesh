@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from app.domain.repositories.worker_repository import (
     WorkerRepository,
 )
@@ -19,7 +21,6 @@ class TestInMemoryWorkerRepositoryContract(
     the WorkerRepository contract.
     """
 
-    def repository(
-        self,
-    ) -> WorkerRepository:
+    @pytest.fixture
+    def repository(self) -> WorkerRepository:
         return InMemoryWorkerRepository()

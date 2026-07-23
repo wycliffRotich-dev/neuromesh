@@ -2,7 +2,7 @@ from enum import StrEnum
 
 
 class JobStatus(StrEnum):
-    SUBMITTED = "SUB,ITTED"
+    SUBMITTED = "SUBMITTED"
     QUEUED = "QUEUED"
     SCHEDULED = "SCHEDULED"
     RUNNING = "RUNNING"

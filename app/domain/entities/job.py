@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.domain.enums.job_status import JobStatus
 from app.domain.exceptions.invalid_job_transition import (
@@ -18,6 +18,11 @@ def utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+DEFAULT_EXECUTION_TIMEOUT = timedelta(
+    hours=1,
+)
+
+
 @dataclass(slots=True)
 class Job:
     """
@@ -26,17 +31,32 @@ class Job:
 
     id: JobId
     resources: ResourceRequirements
+
     priority: int = 0
+
     constraints: dict[str, str] = field(
         default_factory=dict,
     )
+
     max_retries: int = 0
+
     retry_count: int = 0
+
+    execution_timeout: timedelta = (
+        DEFAULT_EXECUTION_TIMEOUT
+    )
+
     status: JobStatus = JobStatus.SUBMITTED
+
     assigned_node_id: NodeId | None = None
+
     submitted_at: datetime = field(
         default_factory=utc_now,
     )
+
+    started_at: datetime | None = None
+
+    completed_at: datetime | None = None
 
     _ALLOWED_TRANSITIONS = {
         JobStatus.SUBMITTED: {
@@ -133,6 +153,20 @@ class Job:
     ) -> bool:
         return self.status is JobStatus.CANCELLED
 
+    def has_timed_out(
+        self,
+    ) -> bool:
+        """
+        Return True when a running job has exceeded
+        its execution timeout.
+        """
+        if self.started_at is None:
+            return False
+
+        return (
+            utc_now() - self.started_at
+        ) >= self.execution_timeout
+
     #
     # Commands
     #
@@ -174,6 +208,8 @@ class Job:
     def start(
         self,
     ) -> None:
+        self.started_at = utc_now()
+
         self._transition_to(
             JobStatus.RUNNING,
         )
@@ -181,6 +217,8 @@ class Job:
     def complete(
         self,
     ) -> None:
+        self.completed_at = utc_now()
+
         self._transition_to(
             JobStatus.COMPLETED,
         )
@@ -188,6 +226,8 @@ class Job:
     def fail(
         self,
     ) -> None:
+        self.completed_at = utc_now()
+
         self._transition_to(
             JobStatus.FAILED,
         )
@@ -234,6 +274,9 @@ class Job:
         self.record_retry()
 
         self.assigned_node_id = None
+
+        self.started_at = None
+        self.completed_at = None
 
         self._transition_to(
             JobStatus.QUEUED,

@@ -29,6 +29,22 @@ CREATE TABLE IF NOT EXISTS jobs (
     submitted_at       TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS workers (
+    id                UUID PRIMARY KEY,
+    node_id           UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    status            TEXT NOT NULL,
+    running_job_id    UUID REFERENCES jobs(id) ON DELETE SET NULL,
+    last_seen_at      TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS leases (
+    id                UUID PRIMARY KEY,
+    worker_id         UUID NOT NULL UNIQUE REFERENCES workers(id) ON DELETE CASCADE,
+    job_id            UUID NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+    acquired_at       TIMESTAMPTZ NOT NULL,
+    expires_at        TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS events (
     id                UUID PRIMARY KEY,
     aggregate_id      TEXT NOT NULL,
@@ -43,6 +59,12 @@ ON jobs (status);
 
 CREATE INDEX IF NOT EXISTS idx_nodes_draining
 ON nodes (draining);
+
+CREATE INDEX IF NOT EXISTS idx_workers_status
+ON workers (status);
+
+CREATE INDEX IF NOT EXISTS idx_leases_expires_at
+ON leases (expires_at);
 
 CREATE INDEX IF NOT EXISTS idx_events_aggregate_id
 ON events (aggregate_id);

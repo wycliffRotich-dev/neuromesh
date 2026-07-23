@@ -20,7 +20,7 @@ def test_create_worker_service_creates_and_persists_worker() -> None:
     )
 
     node = Node(
-        id=NodeId("node-1"),
+        id=NodeId.new(),
         capacity=ResourceRequirements(
             cpu_cores=8,
             memory_mib=16384,

@@ -1,107 +1,88 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+import pytest
 
 from app.domain.entities.node import Node
 from app.domain.entities.worker import Worker
-from app.domain.repositories.worker_repository import WorkerRepository
 from app.domain.value_objects.node_id import NodeId
 from app.domain.value_objects.resource_requirements import (
     ResourceRequirements,
 )
+from app.domain.value_objects.worker_id import WorkerId
 
 
-class WorkerRepositoryContract(ABC):
+class WorkerRepositoryContract:
     """
-    Contract test suite for every WorkerRepository implementation.
+    Shared behavioral contract that every WorkerRepository
+    implementation must satisfy.
+
+    Subclass this in a concrete test file and provide a
+    `repository` fixture that returns a fresh, empty
+    implementation under test.
     """
 
-    @abstractmethod
-    def repository(
+    @pytest.fixture
+    def repository(self):
+        raise NotImplementedError(
+            "Subclasses must provide a `repository` fixture."
+        )
+
+    def _make_worker(self) -> Worker:
+        node = Node(
+            id=NodeId.new(),
+            capacity=ResourceRequirements(
+                cpu_cores=8,
+                memory_mib=16_000,
+                vram_mib=0,
+            ),
+        )
+
+        return Worker(
+            id=WorkerId.new(),
+            node=node,
+        )
+
+    def test_save_and_get_by_id(
         self,
-    ) -> WorkerRepository:
-        """
-        Return a fresh repository instance.
-        """
+        repository,
+    ) -> None:
+        worker = self._make_worker()
 
-    def test_save_and_get_by_id(self) -> None:
-        repository = self.repository()
+        repository.save(worker)
 
-        node = Node(
-            id=NodeId("node-1"),
-            capacity=ResourceRequirements(
-                cpu_cores=8,
-                memory_mib=16000,
-                vram_mib=0,
-            ),
-        )
+        stored = repository.get_by_id(worker.id)
 
-        worker = Worker(
-            id="worker-1",
-            node=node,
-        )
+        assert stored is not None
+        assert stored.id == worker.id
 
-        repository.save(
-            worker,
-        )
+    def test_get_by_id_returns_none_when_missing(
+        self,
+        repository,
+    ) -> None:
+        assert repository.get_by_id(WorkerId.new()) is None
 
-        stored = repository.get_by_id(
-            "worker-1",
-        )
+    def test_list_workers(
+        self,
+        repository,
+    ) -> None:
+        worker = self._make_worker()
 
-        assert stored is worker
-
-    def test_list_workers(self) -> None:
-        repository = self.repository()
-
-        node = Node(
-            id=NodeId("node-1"),
-            capacity=ResourceRequirements(
-                cpu_cores=8,
-                memory_mib=16000,
-                vram_mib=0,
-            ),
-        )
-
-        worker = Worker(
-            id="worker-1",
-            node=node,
-        )
-
-        repository.save(
-            worker,
-        )
+        repository.save(worker)
 
         workers = repository.list()
 
-        assert worker in workers
+        ids = {w.id for w in workers}
+        assert worker.id in ids
         assert len(workers) == 1
 
-    def test_remove_worker(self) -> None:
-        repository = self.repository()
+    def test_remove_worker(
+        self,
+        repository,
+    ) -> None:
+        worker = self._make_worker()
 
-        node = Node(
-            id=NodeId("node-1"),
-            capacity=ResourceRequirements(
-                cpu_cores=8,
-                memory_mib=16000,
-                vram_mib=0,
-            ),
-        )
+        repository.save(worker)
 
-        worker = Worker(
-            id="worker-1",
-            node=node,
-        )
+        repository.delete(worker.id)
 
-        repository.save(
-            worker,
-        )
-
-        repository.delete(
-            "worker-1",
-        )
-
-        assert repository.get_by_id(
-            "worker-1",
-        ) is None
+        assert repository.get_by_id(worker.id) is None
