@@ -34,6 +34,12 @@ class PostgresJobRepository(JobRepository):
             else None
         )
 
+        command = (
+            json.dumps(job.command)
+            if job.command is not None
+            else None
+        )
+
         with self._pool.connection() as conn:
             conn.execute(
                 """
@@ -41,12 +47,13 @@ class PostgresJobRepository(JobRepository):
                     id, cpu_cores, memory_mib, vram_mib,
                     priority, constraints, max_retries,
                     retry_count, status, assigned_node_id,
-                    submitted_at
+                    submitted_at, command, exit_code
                 ) VALUES (
                     %(id)s, %(cpu_cores)s, %(memory_mib)s,
                     %(vram_mib)s, %(priority)s, %(constraints)s,
                     %(max_retries)s, %(retry_count)s, %(status)s,
-                    %(assigned_node_id)s, %(submitted_at)s
+                    %(assigned_node_id)s, %(submitted_at)s,
+                    %(command)s, %(exit_code)s
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     cpu_cores = EXCLUDED.cpu_cores,
@@ -58,7 +65,9 @@ class PostgresJobRepository(JobRepository):
                     retry_count = EXCLUDED.retry_count,
                     status = EXCLUDED.status,
                     assigned_node_id = EXCLUDED.assigned_node_id,
-                    submitted_at = EXCLUDED.submitted_at
+                    submitted_at = EXCLUDED.submitted_at,
+                    command = EXCLUDED.command,
+                    exit_code = EXCLUDED.exit_code
                 """,
                 {
                     "id": str(job.id),
@@ -72,6 +81,8 @@ class PostgresJobRepository(JobRepository):
                     "status": job.status.value,
                     "assigned_node_id": assigned_node_id,
                     "submitted_at": job.submitted_at,
+                    "command": command,
+                    "exit_code": job.exit_code,
                 },
             )
 
@@ -105,6 +116,10 @@ class PostgresJobRepository(JobRepository):
         if isinstance(constraints, str):
             constraints = json.loads(constraints)
 
+        command = row["command"]
+        if isinstance(command, str):
+            command = json.loads(command)
+
         assigned_node_id = (
             NodeId(row["assigned_node_id"])
             if row["assigned_node_id"] is not None
@@ -125,4 +140,6 @@ class PostgresJobRepository(JobRepository):
             status=JobStatus(row["status"]),
             assigned_node_id=assigned_node_id,
             submitted_at=row["submitted_at"],
+            command=command,
+            exit_code=row["exit_code"],
         )

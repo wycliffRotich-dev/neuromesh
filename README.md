@@ -2,7 +2,7 @@
 
 ### A distributed AI workload scheduler built to demonstrate Clean Architecture, Domain-Driven Design, and real infrastructural decoupling.
 
-[![Tests](https://img.shields.io/badge/tests-157%20passed-brightgreen)](#test-coverage)
+[![Tests](https://img.shields.io/badge/tests-174%20passed-brightgreen)](#test-coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#tech-stack)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](#tech-stack)
@@ -56,7 +56,7 @@ The system is split into four layers, with dependencies pointing inward:
 
 **Domain**: `Job`, `Node`, `Worker`, and `Lease` aggregates enforce their own invariants. The scheduling algorithm and job lifecycle state machine live here as plain Python, with no imports from FastAPI or psycopg. Delete the infrastructure layer entirely and the domain tests still pass.
 
-**Application**: Services such as `ScheduleJobService`, `AssignWorkerService`, `AcquireLeaseService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down. A `WorkerExecutionLoop` drives a worker through renewing its lease, running its assigned job, and releasing the lease on completion. A `ReconciliationLoop` catches the failure modes the happy path can't: crashed workers, expired leases, state left inconsistent by infrastructure failures. It repairs both jobs abandoned before execution started and, the more common case, jobs abandoned mid-execution, reclaiming them back to the queue within their retry budget and failing them outright once that budget is exhausted, so a single unhealthy node can't cause a job to be reassigned and abandoned indefinitely.
+**Application**: **Application**: Services such as `ScheduleJobService`, `AssignWorkerService`, `AcquireLeaseService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down. A `WorkerExecutionLoop` drives a worker through renewing its lease, actually executing its assigned job as a real subprocess with enforced timeouts (graceful `SIGTERM`, then forceful `SIGKILL`), recording the real outcome, and releasing the lease regardless of that outcome. A `ReconciliationLoop` catches the failure modes the happy path can't: crashed workers, expired leases, state left inconsistent by infrastructure failures. It repairs both jobs abandoned before execution started and, the more common case, jobs abandoned mid-execution, reclaiming them back to the queue within their retry budget and failing them outright once that budget is exhausted, so a single unhealthy node can't cause a job to be reassigned and abandoned indefinitely.
 
 **Infrastructure**: PostgreSQL implementations exist for every repository (`Node`, `Job`, `Worker`, `Lease`, `Event`), written with raw `psycopg` instead of an ORM, a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. `Node`, `Job`, and `Event` additionally have SQLite implementations for local development. Every repository is validated against a shared **contract test suite** run against each backend it supports, so switching between implementations, or trusting that they behave identically, is a tested guarantee rather than an assumption.
 
@@ -68,7 +68,7 @@ Every non-obvious decision, why domain owns scheduling instead of application, w
 
 ## Test Coverage
 
-157 tests across domain, application, infrastructure, and API layers:
+174 tests across domain, application, infrastructure, and API layers:
 
 - Full domain logic coverage: job lifecycle, retry policy, constraint matching, node and worker liveness, lease semantics
 - Contract tests proving every repository's in-memory, SQLite (where implemented), and PostgreSQL implementations behave identically, including foreign-key-enforced aggregates such as `Worker` and `Lease`
@@ -107,7 +107,6 @@ CI runs the full test suite against a live Postgres service on every push. See `
 - Hardening the API for public deployment (rate limiting, structured logging, error tracking)
 - Live cloud deployment with CI/CD auto-deploy on merge
 - A short demo walkthrough of a job going from submission to completion on the live dashboard
-
 ---
 
 ## Scope

@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS jobs (
     retry_count INTEGER NOT NULL,
     status TEXT NOT NULL,
     assigned_node_id TEXT,
-    submitted_at TEXT NOT NULL
+    submitted_at TEXT NOT NULL,
+    command TEXT,
+    exit_code INTEGER
 );
 """
 
@@ -50,6 +52,12 @@ class SqliteJobRepository(JobRepository):
         self,
         job: Job,
     ) -> None:
+        command = (
+            json.dumps(job.command)
+            if job.command is not None
+            else None
+        )
+
         self._connection.execute(
             """
             INSERT INTO jobs (
@@ -63,8 +71,10 @@ class SqliteJobRepository(JobRepository):
                 retry_count,
                 status,
                 assigned_node_id,
-                submitted_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                submitted_at,
+                command,
+                exit_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 cpu_cores = excluded.cpu_cores,
                 memory_mib = excluded.memory_mib,
@@ -75,7 +85,9 @@ class SqliteJobRepository(JobRepository):
                 retry_count = excluded.retry_count,
                 status = excluded.status,
                 assigned_node_id = excluded.assigned_node_id,
-                submitted_at = excluded.submitted_at
+                submitted_at = excluded.submitted_at,
+                command = excluded.command,
+                exit_code = excluded.exit_code
             """,
             (
                 str(job.id),
@@ -89,6 +101,8 @@ class SqliteJobRepository(JobRepository):
                 job.status.value,
                 (str(job.assigned_node_id) if job.assigned_node_id is not None else None),
                 job.submitted_at.isoformat(),
+                command,
+                job.exit_code,
             ),
         )
         self._connection.commit()
@@ -139,6 +153,12 @@ class SqliteJobRepository(JobRepository):
             else None
         )
 
+        command = (
+            json.loads(row["command"])
+            if row["command"] is not None
+            else None
+        )
+
         return Job(
             id=JobId(value=UUID(row["id"])),
             resources=ResourceRequirements(
@@ -155,4 +175,6 @@ class SqliteJobRepository(JobRepository):
             submitted_at=datetime.fromisoformat(
                 row["submitted_at"],
             ),
+            command=command,
+            exit_code=row["exit_code"],
         )

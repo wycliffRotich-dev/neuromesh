@@ -125,6 +125,7 @@ class Worker:
 
     def complete(
         self,
+        exit_code: int | None = None,
     ) -> None:
         """
         Complete the running job.
@@ -134,13 +135,16 @@ class Worker:
                 "No running job."
             )
 
-        self.running_job.complete()
+        self.running_job.complete(
+            exit_code=exit_code,
+        )
 
         self.running_job = None
         self.status = WorkerStatus.IDLE
 
     def fail(
         self,
+        exit_code: int | None = None,
     ) -> None:
         """
         Mark the running job as failed.
@@ -150,7 +154,9 @@ class Worker:
                 "No running job."
             )
 
-        self.running_job.fail()
+        self.running_job.fail(
+            exit_code=exit_code,
+        )
 
         self.running_job = None
         self.status = WorkerStatus.IDLE
