@@ -38,6 +38,16 @@ class RecoverExpiredLeaseService:
 
         Leases that have not yet expired are left untouched;
         their worker is still the legitimate owner of the job.
+
+        A job whose lease expired is reclaimed rather than
+        unscheduled: it may be SCHEDULED (worker died before
+        starting it) or, far more commonly, RUNNING (worker
+        died mid-execution, which is the normal case since a
+        lease stays alive for the job's entire runtime).
+        reclaim() consumes a retry attempt and fails the job
+        outright once retries are exhausted, so a
+        consistently unhealthy worker cannot cause a job to
+        be reassigned and abandoned forever.
         """
         for lease in self._lease_repository.list():
 
@@ -60,7 +70,7 @@ class RecoverExpiredLeaseService:
                 )
 
             if job is not None:
-                job.unschedule()
+                job.reclaim()
 
                 self._job_repository.save(
                     job,

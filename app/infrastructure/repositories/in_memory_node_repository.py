@@ -18,10 +18,6 @@ class InMemoryNodeRepository(NodeRepository):
     ) -> None:
         self._nodes: dict[NodeId, Node] = {}
 
-        print(
-            f"[INIT] Repository id={id(self)}"
-        )
-
         if nodes is not None:
             for node in nodes:
                 self.save(node)
@@ -30,27 +26,11 @@ class InMemoryNodeRepository(NodeRepository):
         self,
         node: Node,
     ) -> None:
-        print(
-            f"[SAVE] Repository id={id(self)}"
-        )
-
         self._nodes[node.id] = node
-
-        print(
-            f"[SAVE] Nodes stored={len(self._nodes)}"
-        )
 
     def list(
         self,
     ) -> list[Node]:
-        print(
-            f"[LIST] Repository id={id(self)}"
-        )
-
-        print(
-            f"[LIST] Nodes stored={len(self._nodes)}"
-        )
-
         return list(
             self._nodes.values(),
         )
