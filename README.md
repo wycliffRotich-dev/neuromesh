@@ -1,7 +1,8 @@
 # NeuroMesh
-### A distributed AI workload scheduler built to demonstrate clean architecture, domain-driven design, and real infrastructural decoupling.
 
-[![Tests](https://img.shields.io/badge/tests-136%20passed-brightgreen)](#test-coverage)
+### A distributed AI workload scheduler built to demonstrate Clean Architecture, Domain-Driven Design, and real infrastructural decoupling.
+
+[![Tests](https://img.shields.io/badge/tests-155%20passed-brightgreen)](#test-coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#tech-stack)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](#tech-stack)
@@ -21,7 +22,7 @@ This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementa
 |---|---|
 | **Language** | Python 3.12 |
 | **API Framework** | FastAPI |
-| **Database** | PostgreSQL (raw `psycopg`, no ORM) + SQLite for local/dev |
+| **Database** | PostgreSQL (raw `psycopg`, no ORM), with SQLite for select repositories in local development |
 | **Frontend** | React + TypeScript + Vite |
 | **Testing** | pytest, contract testing across repository implementations |
 | **CI/CD** | GitHub Actions |
@@ -34,7 +35,7 @@ This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementa
 
 Most scheduler side-projects are a single `main.py` script wrapped in a `while True` loop polling an in-memory dictionary. They work fine, right up until you need to swap the persistence engine, add a new constraint type, or figure out why a job silently disappeared, or why two workers picked up the same job at once.
 
-NeuroMesh was built around one rule: **the domain logic doesn't know or care where the data lives.** Jobs, nodes, workers, and the allocation algorithm are pure Python with zero infrastructure dependencies. The database is a detail, not the foundation. This project is a concrete demonstration that these architectural patterns aren't just conference-talk vocabulary, they're guardrails that keep a codebase understandable as it grows, and as its correctness requirements get harder.
+NeuroMesh was built around one rule: **the domain logic doesn't know or care where the data lives.** Jobs, nodes, workers, and the allocation algorithm are pure Python with zero infrastructure dependencies. The database is a detail, not the foundation. This project is a concrete demonstration that these architectural patterns aren't just conference-talk vocabulary; they're guardrails that keep a codebase understandable as it grows, and as its correctness requirements get harder.
 
 ---
 
@@ -53,11 +54,11 @@ NeuroMesh was built around one rule: **the domain logic doesn't know or care whe
 
 The system is split into four layers, with dependencies pointing inward:
 
-**Domain**: Job, Node, Worker, and Lease aggregates enforce their own invariants. The scheduling algorithm and job lifecycle state machine live here as plain Python, with no imports from FastAPI or psycopg. Delete the infrastructure layer entirely and the domain tests still pass.
+**Domain**: `Job`, `Node`, `Worker`, and `Lease` aggregates enforce their own invariants. The scheduling algorithm and job lifecycle state machine live here as plain Python, with no imports from FastAPI or psycopg. Delete the infrastructure layer entirely and the domain tests still pass.
 
-**Application**: Services like `ScheduleJobService`, `AssignWorkerService`, `AcquireLeaseService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down. A `WorkerExecutionLoop` drives a worker through renewing its lease, running its assigned job, and releasing the lease on completion. A `ReconciliationLoop` is wired in to catch the failure modes the happy path can't: crashed workers, expired leases, state left inconsistent by infrastructure failures. The recovery logic it delegates to is still being built out, today it walks the worker fleet each cycle; the actual repair actions are the next piece going in.
+**Application**: Services such as `ScheduleJobService`, `AssignWorkerService`, `AcquireLeaseService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down. A `WorkerExecutionLoop` drives a worker through renewing its lease, running its assigned job, and releasing the lease on completion. A `ReconciliationLoop` is wired in to catch the failure modes the happy path can't: crashed workers, expired leases, state left inconsistent by infrastructure failures. The recovery logic it delegates to is still being built out; today it walks the worker fleet each cycle, and the actual repair actions are the next piece going in.
 
-**Infrastructure**: Two repository implementations, SQLite and PostgreSQL, both written with raw `psycopg` instead of an ORM, a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. Both implementations are validated against the same **contract test suite**, so switching between them is a tested guarantee, not an assumption.
+**Infrastructure**: PostgreSQL implementations exist for every repository (`Node`, `Job`, `Worker`, `Lease`, `Event`), written with raw `psycopg` instead of an ORM, a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. `Node`, `Job`, and `Event` additionally have SQLite implementations for local development. Every repository is validated against a shared **contract test suite** run against each backend it supports, so switching between implementations, or trusting that they behave identically, is a tested guarantee rather than an assumption.
 
 **Presentation**: FastAPI endpoints for jobs, nodes, and workers that validate input, call an application service, and return a response. No business logic lives here.
 
@@ -67,9 +68,10 @@ Every non-obvious decision, why domain owns scheduling instead of application, w
 
 ## Test Coverage
 
-136 tests across domain, application, infrastructure, and API layers:
+155 tests across domain, application, infrastructure, and API layers:
+
 - Full domain logic coverage: job lifecycle, retry policy, constraint matching, node and worker liveness, lease semantics
-- Contract tests proving SQLite and Postgres repositories behave identically
+- Contract tests proving every repository's in-memory, SQLite (where implemented), and PostgreSQL implementations behave identically, including foreign-key-enforced aggregates such as `Worker` and `Lease`
 - Application service tests for every use case, including lease acquisition, renewal, and release
 - API-level tests against real FastAPI endpoints
 
@@ -95,14 +97,14 @@ npm install
 npm run dev
 ```
 
-CI runs the full test suite against a live Postgres service on every push, see `.github/workflows`.
+CI runs the full test suite against a live Postgres service on every push. See `.github/workflows`.
 
 ---
 
 ## What's Next
 
 - Implementing the actual repair actions inside the reconciliation loop (recovering expired leases, reclaiming jobs from dead workers) rather than just detecting the inconsistency
-- Wiring real job execution into the worker execution loop, currently the lease renew/release cycle runs around a placeholder step
+- Wiring real job execution into the worker execution loop; currently the lease renew/release cycle runs around a placeholder step
 - Hardening the API for public deployment (rate limiting, structured logging, error tracking)
 - Live cloud deployment with CI/CD auto-deploy on merge
 - A short demo walkthrough of a job going from submission to completion on the live dashboard
@@ -111,4 +113,4 @@ CI runs the full test suite against a live Postgres service on every push, see `
 
 ## Scope
 
-This isn't trying to compete with Kubernetes or Ray at scale. It's a demonstration of how to build a system that stays understandable as it grows, layered correctly, tested honestly, and documented well enough that someone else could pick it up and know exactly why every piece is where it is, including the pieces that are deliberately half-built and marked as such.
+This isn't trying to compete with Kubernetes or Ray at scale. It's a demonstration of how to build a system that stays understandable as it grows: layered correctly, tested honestly, and documented well enough that someone else could pick it up and know exactly why every piece is where it is, including the pieces that are deliberately half-built and marked as such.

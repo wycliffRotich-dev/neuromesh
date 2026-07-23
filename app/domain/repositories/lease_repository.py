@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from app.domain.entities.lease import Lease
+from app.domain.value_objects.job_id import JobId
+from app.domain.value_objects.worker_id import WorkerId
 
 
 class LeaseRepository(ABC):
@@ -27,7 +29,7 @@ class LeaseRepository(ABC):
     @abstractmethod
     def get_by_job_id(
         self,
-        job_id: str,
+        job_id: JobId,
     ) -> Lease | None:
         """
         Return the lease for a job.
@@ -39,7 +41,7 @@ class LeaseRepository(ABC):
     @abstractmethod
     def get_by_worker_id(
         self,
-        worker_id: str,
+        worker_id: WorkerId,
     ) -> Lease | None:
         """
         Return the lease owned by a worker.
@@ -60,7 +62,7 @@ class LeaseRepository(ABC):
     @abstractmethod
     def delete(
         self,
-        job_id: str,
+        job_id: JobId,
     ) -> None:
         """
         Remove a lease by job id.
