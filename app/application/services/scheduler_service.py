@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from app.application.services.record_job_events_service import (
+    RecordJobEventsService,
+)
 from app.domain.entities.job import Job
 from app.domain.entities.node import Node
 from app.domain.exceptions.no_available_node_error import (
@@ -23,9 +26,11 @@ class SchedulerService:
         self,
         node_repository: NodeRepository,
         job_repository: JobRepository,
+        record_job_events_service: RecordJobEventsService,
     ) -> None:
         self._node_repository = node_repository
         self._job_repository = job_repository
+        self._record_job_events_service = record_job_events_service
 
     def execute(
         self,
@@ -34,17 +39,13 @@ class SchedulerService:
         """
         Schedule one queued job.
         """
-
         candidates: list[tuple[int, Node]] = []
 
         for node in self._node_repository.list():
-
             if not node.is_alive():
                 continue
-
             if node.is_draining():
                 continue
-
             if not node.can_host(
                 job.resources,
             ):
@@ -98,6 +99,12 @@ class SchedulerService:
 
         self._job_repository.save(
             job,
+        )
+
+        self._record_job_events_service.record(
+            aggregate_id=str(job.id),
+            aggregate_type="Job",
+            event_type="JobScheduled",
         )
 
         return selected

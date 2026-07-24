@@ -11,3 +11,28 @@ export interface NodeResponse {
 export interface ListNodesResponse {
   nodes: NodeResponse[];
 }
+
+export type JobStatus =
+  | "SUBMITTED"
+  | "QUEUED"
+  | "SCHEDULED"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED"
+  | "CANCELLED";
+
+export interface JobSummaryResponse {
+  id: string;
+  status: JobStatus;
+  cpu_cores: number;
+  memory_mib: number;
+  vram_mib: number;
+  exit_code: number | null;
+  submitted_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface ListJobsResponse {
+  jobs: JobSummaryResponse[];
+}

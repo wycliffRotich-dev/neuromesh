@@ -7,6 +7,7 @@ import { RecentJobs } from "../components/jobs/RecentJobs";
 import { NodeTable } from "../components/nodes/NodeTable";
 import { RegisterNodeForm } from "../components/nodes/RegisterNodeForm";
 import { SubmitJobForm } from "../components/jobs/SubmitJobForm";
+import { useJobs } from "../hooks/useJobs";
 import { useNodes } from "../hooks/useNodes";
 
 export default function DashboardPage() {
@@ -16,6 +17,16 @@ export default function DashboardPage() {
     error,
     refresh,
   } = useNodes();
+
+  const {
+    jobs,
+    refresh: refreshJobs,
+  } = useJobs();
+
+  function refreshAll() {
+    refresh();
+    refreshJobs();
+  }
 
   if (loading) {
     return (
@@ -86,7 +97,7 @@ export default function DashboardPage() {
         />
 
         <SubmitJobForm
-          onSubmitted={refresh}
+          onSubmitted={refreshAll}
         />
       </div>
 
@@ -103,7 +114,7 @@ export default function DashboardPage() {
       />
 
       <RecentJobs
-        jobs={[]}
+        jobs={jobs}
       />
 
       <ActivityFeed />

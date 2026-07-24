@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from app.application.services.record_job_events_service import (
+    RecordJobEventsService,
+)
 from app.application.services.scheduler_service import (
     SchedulerService,
 )
@@ -25,9 +28,11 @@ class CreateJobService:
         self,
         job_repository: JobRepository,
         scheduler_service: SchedulerService,
+        record_job_events_service: RecordJobEventsService,
     ) -> None:
         self._job_repository = job_repository
         self._scheduler_service = scheduler_service
+        self._record_job_events_service = record_job_events_service
 
     def execute(
         self,
@@ -42,6 +47,12 @@ class CreateJobService:
 
         self._job_repository.save(
             job,
+        )
+
+        self._record_job_events_service.record(
+            aggregate_id=str(job.id),
+            aggregate_type="Job",
+            event_type="JobCreated",
         )
 
         try:
