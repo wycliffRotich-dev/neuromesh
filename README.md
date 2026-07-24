@@ -1,10 +1,8 @@
 # AetherGrid
 
-### An open-source AI control plane for orchestrating inference and batch workloads across distributed compute clusters.
+### A distributed AI workload scheduler built to demonstrate Clean Architecture, Domain-Driven Design, and real infrastructural decoupling.
 
-AetherGrid provides intelligent workload scheduling, event-driven orchestration, REST APIs, real-time observability, and infrastructure decoupling for modern AI systems. It is built using Domain-Driven Design (DDD), Clean Architecture, Test-Driven Development (TDD), and modern Python engineering practices.
-
-[![Tests](https://img.shields.io/badge/tests-176%20passed-brightgreen)](#test-coverage)
+[![Tests](https://img.shields.io/badge/tests-178%20passed-brightgreen)](#test-coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#tech-stack)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](#tech-stack)
@@ -12,135 +10,98 @@ AetherGrid provides intelligent workload scheduling, event-driven orchestration,
 [![React](https://img.shields.io/badge/React-TypeScript-61DAFB?logo=react&logoColor=black)](#tech-stack)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#tech-stack)
 
----
+AetherGrid takes workloads, matches them against available compute nodes based on resource requirements and constraints, and manages the full lifecycle: queued, scheduled, running, completed, failed, retried. Jobs run through workers registered against nodes, and job execution ownership is enforced through time-bound leases rather than a simple assignment flag.
 
-## Overview
-
-AetherGrid is a lightweight AI control plane designed to orchestrate distributed inference and batch workloads across compute clusters.
-
-It accepts workloads, matches them to available compute nodes based on resource requirements and scheduling constraints, coordinates workers responsible for execution, and manages the complete workload lifecycle from submission to completion. Ownership of running work is protected through renewable execution leases, allowing the platform to recover safely from worker crashes, network interruptions, and infrastructure failures.
-
-Rather than attempting to replace platforms such as Kubernetes or Ray, AetherGrid focuses on demonstrating how modern distributed systems can be engineered using strong architectural boundaries, explicit domain models, and infrastructure-independent business logic.
+This isn't an attempt to replace Kubernetes or Ray. It's a deliberate implementation of **Clean Architecture** and **Domain-Driven Design** applied to a scheduling problem, where the architectural boundaries are enforced by tests, not just diagrams, and every non-obvious decision is written down as an ADR.
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
+|---|---|
 | **Language** | Python 3.12 |
 | **API Framework** | FastAPI |
-| **Database** | PostgreSQL (`psycopg`) with SQLite implementations for selected repositories |
+| **Database** | PostgreSQL (raw `psycopg`, no ORM), with SQLite for select repositories in local development |
 | **Frontend** | React + TypeScript + Vite |
-| **Testing** | pytest + repository contract testing |
+| **Testing** | pytest, contract testing across repository implementations |
 | **CI/CD** | GitHub Actions |
-| **Containerization** | Docker & Docker Compose |
-| **Architecture** | Clean Architecture, Domain-Driven Design, SOLID, Repository Pattern |
+| **Containerization** | Docker + Docker Compose |
+| **Architecture** | Clean Architecture, Domain-Driven Design, Repository Pattern, SOLID |
 
 ---
 
-## Why AetherGrid Exists
+## Why This Exists
 
-Many scheduling projects work well until real-world requirements begin to appear.
+Most scheduler side-projects are a single `main.py` script wrapped in a `while True` loop polling an in-memory dictionary. They work fine, right up until you need to swap the persistence engine, add a new constraint type, or figure out why a job silently disappeared, or why two workers picked up the same job at once.
 
-Adding multiple persistence backends, recovering abandoned jobs, enforcing worker ownership, tracking infrastructure health, or introducing new scheduling constraints often causes application logic and infrastructure code to become tightly coupled.
-
-AetherGrid approaches the problem differently.
-
-The core scheduling engine is completely independent of databases, APIs, frameworks, and infrastructure concerns. Domain models encapsulate business rules while application services coordinate workflows. Infrastructure exists only to support the domain rather than define it.
-
-This separation makes the platform easier to evolve, easier to test, and easier to understand as complexity grows.
+AetherGrid was built around one rule: **the domain logic doesn't know or care where the data lives.** Jobs, nodes, workers, and the allocation algorithm are pure Python with zero infrastructure dependencies. The database is a detail, not the foundation. This project is a concrete demonstration that these architectural patterns aren't just conference-talk vocabulary; they're guardrails that keep a codebase understandable as it grows, and as its correctness requirements get harder.
 
 ---
 
 ## Key Capabilities
 
-- Intelligent workload scheduling across distributed compute nodes
-- Resource-aware best-fit allocation
-- Job lifecycle management
-- Worker registration and heartbeat monitoring
-- Lease-based execution ownership
-- Automatic recovery of abandoned workloads
-- Event-driven architecture with persistent event recording
-- REST API built with FastAPI
-- PostgreSQL persistence using raw `psycopg`
-- SQLite implementations for local development
-- Interactive React dashboard
-- Repository contract testing across multiple storage implementations
+- **Job lifecycle management**: explicit state transitions (Queued → Scheduled → Running → Completed/Failed) with configurable retry policies and priority-aware scheduling
+- **Constraint-aware best-fit allocator**: matches workloads to nodes based on resource requirements and labels, while skipping nodes that are draining or offline
+- **Worker registration and heartbeats**: workers register against a node, report liveness, and are marked dead when heartbeats stop
+- **Lease-based execution ownership**: when a worker accepts a job, it holds a renewable, expiring lease on that job, so retries, reconnects, and network failures can't result in two workers executing the same job
+- **Real subprocess execution with enforced timeouts**: jobs with a command run as real subprocesses, with a two-stage shutdown (graceful `SIGTERM`, then `SIGKILL` after a grace period) if a job overruns its execution timeout
+- **Node liveness tracking**: heartbeat-based health checks, automatic detection of offline nodes, and resource reclamation when work fails or nodes disappear
+- **Reconciliation with bounded retries**: jobs abandoned by a dead worker or an offline node are reclaimed back to the queue within their retry budget, and fail outright once that budget is exhausted, so a single unhealthy node can't cause a job to be reassigned and abandoned indefinitely
+- **Domain event recording**: real lifecycle transitions (`JobCreated`, `JobScheduled`, and growing) are persisted as immutable events, queryable per-job via `GET /jobs/{id}/history`
+- **Live dashboard**: submit jobs, register nodes, and watch cluster health, resource usage, and recent job activity in real time
 
 ---
 
 ## Architecture
 
-AetherGrid follows **Clean Architecture** with strict dependency inversion.
+The system is split into four layers, with dependencies pointing inward:
 
-### Domain
+**Domain**: `Job`, `Node`, `Worker`, and `Lease` aggregates enforce their own invariants. The scheduling algorithm and job lifecycle state machine live here as plain Python, with no imports from FastAPI or psycopg. Delete the infrastructure layer entirely and the domain tests still pass.
 
-The Domain layer contains aggregate roots including Jobs, Nodes, Workers, and Leases. Business rules, scheduling decisions, retry policies, and state transitions are implemented entirely in pure Python without framework or database dependencies.
+**Application**: Services such as `ScheduleJobService`/`SchedulerService`, `AssignWorkerService`, `AcquireLeaseService`, and `ClusterHealthService` coordinate domain objects and repositories without embedding business rules that belong one layer down. A `WorkerExecutionLoop` drives a worker through renewing its lease, actually executing its assigned job as a real subprocess, recording the real outcome, and releasing the lease regardless of that outcome. A `ReconciliationLoop` catches the failure modes the happy path can't: crashed workers, expired leases, state left inconsistent by infrastructure failures.
 
-### Application
+**Infrastructure**: PostgreSQL implementations exist for every repository (`Node`, `Job`, `Worker`, `Lease`, `Event`), written with raw `psycopg` instead of an ORM, a deliberate choice to keep query behavior and transaction boundaries visible rather than abstracted away. `Node`, `Job`, and `Event` additionally have SQLite implementations for local development. Every repository is validated against a shared **contract test suite** run against each backend it supports, so switching between implementations, or trusting that they behave identically, is a tested guarantee rather than an assumption.
 
-Application services coordinate workflows between repositories and domain objects.
+**Presentation**: FastAPI endpoints for jobs, nodes, and workers that validate input, call an application service, and return a response. No business logic lives here.
 
-Services handle scheduling, worker registration, lease acquisition, lease renewal, reconciliation, cluster health, and job execution orchestration while leaving business rules inside the domain.
+Every non-obvious decision, why domain owns scheduling instead of application, why raw psycopg over an ORM, how job lifecycle transitions are enforced, why leases exist instead of a simple assignment field, why job commands are deliberately not exposed over the public API yet, is documented as an ADR in `/docs/adr`.
 
-### Infrastructure
+---
 
-Infrastructure provides implementations for repositories using PostgreSQL and SQLite.
+## A Deliberate Security Decision Worth Naming
 
-Every repository implementation is validated using a shared contract test suite, guaranteeing identical behavior across supported storage backends.
+The execution engine can run real, arbitrary commands as subprocesses, with real timeout enforcement. `Job.command` and `Job.exit_code` exist on the domain model and are fully tested at the service layer. They are **not** exposed through the public `CreateJobRequest` API, and this is enforced by a test asserting the field's absence from every response, not left as a comment.
 
-### Presentation
-
-The Presentation layer exposes REST APIs through FastAPI.
-
-Endpoints validate requests, invoke application services, and return responses without embedding business logic.
+Exposing arbitrary caller-supplied commands over an endpoint with no authentication would mean shipping unauthenticated remote code execution. Building the capability correctly and proving it works, while deferring public exposure until authentication exists, was judged a more honest state to ship than either skipping the feature or exposing it prematurely. See ADR 0012.
 
 ---
 
 ## Test Coverage
 
-The project currently contains **176 automated tests** covering:
+178 tests across domain, application, infrastructure, and API layers:
 
-- Domain entities
-- Value objects
-- Scheduling algorithms
-- Application services
-- Repository contract tests
-- SQLite repositories
-- PostgreSQL repositories
-- FastAPI endpoints
-- Worker lifecycle
-- Lease management
-- Event recording
-- Cluster reconciliation
-
-Run the complete suite with:
+- Full domain logic coverage: job lifecycle, retry policy, constraint matching, node and worker liveness, lease semantics
+- Contract tests proving every repository's in-memory, SQLite (where implemented), and PostgreSQL implementations behave identically, including foreign-key-enforced aggregates such as `Worker` and `Lease`
+- Application service tests for every use case, including lease acquisition, renewal, release, reconciliation repair (both the requeue-with-retries-remaining path and the fail-outright-once-exhausted path), and real subprocess execution (including a test that genuinely kills a process that ignores `SIGTERM`, forcing `SIGKILL`)
+- Event recording tests proving the correct events fire, in the correct order, for both the scheduled and unschedulable paths
+- API-level tests against real FastAPI endpoints
 
 ```bash
 pytest
 ```
 
-All tests currently pass.
-
 ---
 
-## Running AetherGrid
-
-Clone the repository:
+## Running It
 
 ```bash
 git clone https://github.com/wycliffRotich-dev/aethergrid.git
 cd aethergrid
-```
-
-Start the backend services:
-
-```bash
 docker compose up --build
 ```
 
-Run the frontend:
+This starts the API and a Postgres instance. Run the frontend separately:
 
 ```bash
 cd frontend
@@ -148,52 +109,23 @@ npm install
 npm run dev
 ```
 
-Continuous Integration executes the complete test suite automatically on every push using GitHub Actions.
+CI runs the full test suite against a live Postgres service on every push. See `.github/workflows`.
 
 ---
 
-## Project Structure
+## What's Next
 
-```
-app/
-├── application/
-├── domain/
-├── infrastructure/
-└── presentation/
-
-frontend/
-docs/
-tests/
-```
+- Wiring the remaining lifecycle events (`WorkerAssigned`, `LeaseAcquired`, `LeaseReleased`, `JobCompleted`/`JobFailed`, `JobReclaimed`) so the dashboard's event history reflects a job's full story, not just its creation and scheduling
+- A live event feed on the dashboard, backed by a new `GET /events` endpoint
+- Visibility into workers in the dashboard; worker registration and lifecycle currently have no frontend surface at all
+- Hardening the API for public deployment (rate limiting, structured logging, error tracking, authentication), which also unblocks safely exposing real job commands over the public API rather than keeping them internal-only
+- Live cloud deployment with CI/CD auto-deploy on merge
 
 ---
 
-## Roadmap
+## Scope
 
-- Live WebSocket event streaming
-- Distributed worker execution
-- GPU-aware scheduling
-- Multi-node execution
-- Kubernetes integration
-- Authentication and RBAC
-- Metrics and Prometheus integration
-- Distributed tracing
-- Plugin architecture
-- Cloud deployment
-- Multi-cluster orchestration
-
----
-
-## Engineering Principles
-
-- Clean Architecture
-- Domain-Driven Design
-- Test-Driven Development
-- SOLID Principles
-- Dependency Inversion
-- Repository Pattern
-- Event-Driven Design
-- Explicit Architectural Decision Records (ADRs)
+This isn't trying to compete with Kubernetes or Ray at scale. It's a demonstration of how to build a system that stays understandable as it grows: layered correctly, tested honestly, and documented well enough that someone else could pick it up and know exactly why every piece is where it is, including the pieces that are deliberately half-built and marked as such.
 
 ---
 
