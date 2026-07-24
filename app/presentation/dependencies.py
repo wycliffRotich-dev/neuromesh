@@ -124,13 +124,15 @@ def _build_repositories() -> tuple[
 ) = _build_repositories()
 
 
+_record_job_events_service = RecordJobEventsService(
+    event_repository=_event_repository,
+)
+
+
 _scheduler_service = SchedulerService(
     node_repository=_node_repository,
     job_repository=_job_repository,
-)
-
-_record_job_events_service = RecordJobEventsService(
-    event_repository=_event_repository,
+    record_job_events_service=_record_job_events_service,
 )
 
 
@@ -142,6 +144,7 @@ def get_create_job_service() -> CreateJobService:
     return CreateJobService(
         job_repository=_job_repository,
         scheduler_service=_scheduler_service,
+        record_job_events_service=_record_job_events_service,
     )
 
 

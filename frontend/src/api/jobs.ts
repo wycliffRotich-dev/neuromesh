@@ -1,4 +1,5 @@
 import { api } from "./client";
+import type { ListJobsResponse } from "./types";
 
 export type CreateJobRequest = {
   cpu_cores: number;
@@ -16,4 +17,8 @@ export function createJob(
       body: JSON.stringify(job),
     },
   );
+}
+
+export function listJobs() {
+  return api<ListJobsResponse>("/jobs");
 }
