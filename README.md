@@ -2,7 +2,7 @@
 
 ### A distributed AI workload scheduler built to demonstrate Clean Architecture, Domain-Driven Design, and real infrastructural decoupling.
 
-[![Tests](https://img.shields.io/badge/tests-174%20passed-brightgreen)](#test-coverage)
+[![Tests](https://img.shields.io/badge/tests-176%20passed-brightgreen)](#test-coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#tech-stack)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](#tech-stack)
@@ -68,7 +68,7 @@ Every non-obvious decision, why domain owns scheduling instead of application, w
 
 ## Test Coverage
 
-174 tests across domain, application, infrastructure, and API layers:
+176 tests across domain, application, infrastructure, and API layers:
 
 - Full domain logic coverage: job lifecycle, retry policy, constraint matching, node and worker liveness, lease semantics
 - Contract tests proving every repository's in-memory, SQLite (where implemented), and PostgreSQL implementations behave identically, including foreign-key-enforced aggregates such as `Worker` and `Lease`
