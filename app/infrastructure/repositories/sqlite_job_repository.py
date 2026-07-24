@@ -143,6 +143,23 @@ class SqliteJobRepository(JobRepository):
 
         return [self._row_to_job(row) for row in rows]
 
+    def list_recent(
+        self,
+        limit: int,
+    ) -> list[Job]:
+        """
+        Return the most recently submitted jobs, newest
+        first, capped at `limit`. Ordering and the limit
+        are both pushed down to SQLite via ORDER BY/LIMIT,
+        rather than loading every row and slicing in Python.
+        """
+        rows = self._connection.execute(
+            "SELECT * FROM jobs ORDER BY submitted_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+
+        return [self._row_to_job(row) for row in rows]
+
     def _row_to_job(
         self,
         row: sqlite3.Row,

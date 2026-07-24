@@ -20,6 +20,9 @@ from app.application.services.get_job_service import (
 from app.application.services.get_node_service import (
     GetNodeService,
 )
+from app.application.services.list_jobs_service import (
+    ListJobsService,
+)
 from app.application.services.list_nodes_service import (
     ListNodesService,
 )
@@ -159,6 +162,16 @@ def get_get_job_history_service() -> GetJobHistoryService:
 
     return GetJobHistoryService(
         event_repository=_event_repository,
+    )
+
+
+def get_list_jobs_service() -> ListJobsService:
+    """
+    Return ListJobsService.
+    """
+
+    return ListJobsService(
+        job_repository=_job_repository,
     )
 
 

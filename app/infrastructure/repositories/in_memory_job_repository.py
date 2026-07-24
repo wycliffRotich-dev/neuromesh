@@ -44,4 +44,22 @@ class InMemoryJobRepository(JobRepository):
         """
         Return all queued jobs.
         """
-        return [job for job in self._jobs.values() if job.status == JobStatus.QUEUED]
+        return [
+            job
+            for job in self._jobs.values()
+            if job.status == JobStatus.QUEUED
+        ]
+
+    def list_recent(
+        self,
+        limit: int,
+    ) -> list[Job]:
+        """
+        Return the most recently submitted jobs, newest
+        first, capped at `limit`.
+        """
+        return sorted(
+            self._jobs.values(),
+            key=lambda job: job.submitted_at,
+            reverse=True,
+        )[:limit]
