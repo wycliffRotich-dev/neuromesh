@@ -110,6 +110,22 @@ class PostgresJobRepository(JobRepository):
             ).fetchall()
         return [self._to_entity(row) for row in rows]
 
+    def list_recent(self, limit: int) -> list[Job]:
+        """
+        Return the most recently submitted jobs, newest
+        first, capped at `limit`. Ordering and the limit
+        are both pushed down to PostgreSQL via ORDER
+        BY/LIMIT, rather than loading every row and slicing
+        in Python.
+        """
+        with self._pool.connection() as conn:
+            conn.row_factory = dict_row
+            rows = conn.execute(
+                "SELECT * FROM jobs ORDER BY submitted_at DESC LIMIT %s",
+                (limit,),
+            ).fetchall()
+        return [self._to_entity(row) for row in rows]
+
     @staticmethod
     def _to_entity(row: dict) -> Job:
         constraints = row["constraints"]

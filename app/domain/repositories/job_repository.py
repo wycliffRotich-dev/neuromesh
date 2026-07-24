@@ -36,3 +36,23 @@ class JobRepository(ABC):
         Return all queued jobs.
         """
         ...
+
+    @abstractmethod
+    def list_recent(
+        self,
+        limit: int,
+    ) -> list[Job]:
+        """
+        Return the most recently submitted jobs, ordered
+        newest first, capped at `limit`.
+
+        This is a genuine domain-level query, not a
+        persistence detail leaking upward: "give me the
+        most recent N jobs" is meaningful vocabulary at the
+        repository interface, the same way list_queued()
+        already is. Each implementation is responsible for
+        pushing the ordering and limit down to its own
+        storage engine rather than loading every job into
+        memory and discarding most of it.
+        """
+        ...
